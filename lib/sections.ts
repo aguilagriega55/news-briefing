@@ -3,72 +3,83 @@ export interface Section {
   title: string;
   sources: string;
   icon: string;
-  feeds: { url: string; source: string }[];
+  prompt: string;
 }
 
 export const sections: Section[] = [
   {
     id: "finance",
     title: "Finance & Economy",
-    sources: "Reuters · FT · CNBC · Bloomberg · MarketWatch",
+    sources: "Bloomberg · Reuters · The Economist",
     icon: "📈",
-    feeds: [
-      { url: "https://feeds.content.dowjones.io/public/rss/mw_marketpulse", source: "MarketWatch" },
-      { url: "https://www.cnbc.com/id/100003114/device/rss/rss.html", source: "CNBC" },
-      { url: "https://www.cnbc.com/id/10001147/device/rss/rss.html", source: "CNBC Finance" },
-      { url: "https://rss.nytimes.com/services/xml/rss/nyt/Business.xml", source: "NYT Business" },
-      { url: "https://feeds.skynews.com/feeds/rss/business.xml", source: "Sky News Business" },
-    ],
+    prompt: `Search for today's top 5 finance and economy stories.
+Sources to prioritise IN ORDER: Bloomberg first, Reuters second, The Economist third.
+Focus on: global markets (equities, bonds, FX), central bank decisions,
+inflation data, major corporate news, commodities, oil, gold.
+Be selective — only the most market-moving stories of the day.
+Return exactly 5 items. Each must have a clear source attribution.`,
   },
   {
     id: "politics",
     title: "Politics & World Affairs",
-    sources: "Reuters · AP · BBC · Al Jazeera · The Guardian",
+    sources: "Bloomberg · The Guardian · Reuters",
     icon: "🏛️",
-    feeds: [
-      { url: "http://feeds.bbci.co.uk/news/world/rss.xml", source: "BBC World" },
-      { url: "https://rss.nytimes.com/services/xml/rss/nyt/World.xml", source: "NYT World" },
-      { url: "https://www.theguardian.com/world/rss", source: "The Guardian" },
-      { url: "https://feeds.skynews.com/feeds/rss/world.xml", source: "Sky News" },
-      { url: "http://feeds.bbci.co.uk/news/politics/rss.xml", source: "BBC Politics" },
-    ],
+    prompt: `Search for today's top 5 political and international news stories.
+Sources: Bloomberg Politics, The Guardian, Reuters World News.
+Geographic coverage MUST include a mix — always try to cover:
+- At least 1 story from Europe
+- At least 1 story from the United States
+- At least 1 story from Australia or Asia-Pacific
+- 1-2 global/multilateral stories (UN, NATO, trade, climate)
+Prioritise stories with genuine geopolitical significance.
+Return exactly 5 items.`,
   },
   {
     id: "australia",
     title: "Australia",
-    sources: "ABC Australia · The Age · SMH · Guardian Australia",
+    sources: "The Age · SMH · The Australian · ABC",
     icon: "🦘",
-    feeds: [
-      { url: "https://www.abc.net.au/news/feed/51120/rss.xml", source: "ABC Australia" },
-      { url: "https://www.theguardian.com/australia-news/rss", source: "Guardian Australia" },
-      { url: "https://www.smh.com.au/rss/feed.xml", source: "SMH" },
-      { url: "https://www.theage.com.au/rss/feed.xml", source: "The Age" },
-    ],
+    prompt: `Search for today's top 5 Australian news stories.
+Sources: The Age, Sydney Morning Herald, The Australian, ABC News Australia.
+Focus: federal politics, Victorian/NSW state news, economy,
+cost of living, housing, major court or crime news, weather events.
+Always include at least 1 Melbourne-specific story if available.
+Return exactly 5 items.`,
   },
   {
     id: "worldcup",
     title: "FIFA World Cup 2026",
-    sources: "BBC Sport · ESPN · Reuters Sport · Sky Sports · Goal.com",
+    sources: "FIFA · BBC Sport · ESPN · Goal.com",
     icon: "⚽",
-    feeds: [
-      { url: "http://feeds.bbci.co.uk/sport/football/rss.xml", source: "BBC Sport" },
-      { url: "https://www.espn.com/espn/rss/soccer/news", source: "ESPN Soccer" },
-      { url: "https://feeds.skynews.com/feeds/rss/sports.xml", source: "Sky Sports" },
-      { url: "https://www.theguardian.com/football/rss", source: "Guardian Football" },
-    ],
+    prompt: `Search for the latest FIFA World Cup 2026 news.
+CRITICAL REQUIREMENT: Always structure results by COUNTRY/TEAM news, not just general updates.
+Always include at least 1 story specifically about Mexico (El Tri).
+Then cover other nations: Argentina, Brazil, England, USA, Spain, France, Germany, Australia.
+Include: qualification updates, squad announcements, injuries,
+coach news, match results if tournament is underway, host city updates.
+Return exactly 5 items, each clearly attributed to a specific national team.`,
   },
   {
     id: "sports",
     title: "NFL · AFL · Liga MX",
-    sources: "ESPN · Reuters Sport · AFL.com.au · Fox Sports · Reforma",
+    sources: "ESPN · AFL.com.au · Record · Reforma",
     icon: "🏈",
-    feeds: [
-      { url: "https://www.espn.com/espn/rss/nfl/news", source: "ESPN NFL" },
-      { url: "https://www.espn.com/espn/rss/nba/news", source: "ESPN NBA" },
-      { url: "https://www.espn.com/espn/rss/soccer/news", source: "ESPN Soccer" },
-      { url: "https://www.theguardian.com/sport/rss", source: "Guardian Sport" },
-      { url: "https://feeds.skynews.com/feeds/rss/sports.xml", source: "Sky Sports" },
-    ],
+    prompt: `Search for today's sports news across three leagues. Return exactly 5 items total.
+Coverage requirements — you MUST include stories from ALL THREE leagues:
+
+NFL (minimum 1 story): Cover specific teams. Include scores, trades, injuries,
+standings. Name the specific teams involved in every story.
+
+AFL (minimum 1 story): Cover specific AFL clubs. Name the teams.
+Include match results, ladder, injuries, trades, finals news.
+
+Liga MX (minimum 2 stories):
+- ALWAYS include at least 1 story about Pumas UNAM men's team
+- ALWAYS include at least 1 story about Pumas UNAM women's team (Liga MX Femenil)
+- If no Pumas news today, cover their last match result or upcoming fixture
+Sources: ESPN, AFL.com.au, Reforma, Record, MedioTiempo.
+
+Return exactly 5 items. Label each with its league: NFL / AFL / Liga MX.`,
   },
 ];
 

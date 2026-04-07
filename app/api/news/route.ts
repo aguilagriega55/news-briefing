@@ -1,33 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import Parser from "rss-parser";
+import Anthropic from "@anthropic-ai/sdk";
 import { sections } from "@/lib/sections";
 import { getCachedBriefing, saveBriefing, Article } from "@/lib/supabase";
 
-const parser = new Parser({
-  timeout: 8000,
-  headers: { "User-Agent": "Mozilla/5.0 (compatible; NewsBriefing/1.0)" },
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY!,
 });
-
-async function fetchFeed(
-  url: string,
-  source: string
-): Promise<Article[]> {
-  try {
-    const feed = await parser.parseURL(url);
-    return (feed.items || []).slice(0, 10).map((item) => ({
-      title: (item.title || "").trim().slice(0, 120),
-      summary: (item.contentSnippet || item.content || item.summary || "")
-        .replace(/<[^>]+>/g, "")
-        .trim()
-        .slice(0, 300),
-      source: feed.title || source,
-      url: item.link || item.guid || undefined,
-      pubDate: item.isoDate || item.pubDate || "",
-    }));
-  } catch {
-    return [];
-  }
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -59,40 +37,59 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Fetch all feeds in parallel
-    const results = await Promise.all(
-      section.feeds.map((f) => fetchFeed(f.url, f.source))
-    );
-
-    // Merge, sort by date (newest first), deduplicate by title, take top 5
-    const all: (Article & { pubDate: string })[] = results
-      .flat()
-      .filter((a) => a.title && a.summary) as (Article & { pubDate: string })[];
-
-    const seen = new Set<string>();
-    const deduped = all.filter((a) => {
-      const key = a.title.toLowerCase().slice(0, 60);
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
+    // Live fetch from Anthropic
+    const editionLabel = edition === "morning" ? "morning" : "evening";
+    const today = new Date().toLocaleDateString("en-AU", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
 
-    deduped.sort((a, b) => {
-      const da = a.pubDate ? new Date(a.pubDate).getTime() : 0;
-      const db = b.pubDate ? new Date(b.pubDate).getTime() : 0;
-      return db - da;
+    const prompt = `${section.prompt}
+
+Today is ${today}. This is the ${editionLabel} edition.
+
+Return the results as a JSON array of exactly 5 objects. Each object must have:
+- "title": string (headline, max 100 chars)
+- "summary": string (2-3 sentence summary of the story)
+- "source": string (publication name, e.g. "Bloomberg", "Reuters")
+- "url": string (article URL if available — omit field if not found)
+
+Respond with ONLY a valid JSON array — no markdown fences, no explanation, just the raw array.`;
+
+    const message = await anthropic.messages.create({
+      model: "claude-opus-4-5",
+      max_tokens: 2048,
+      tools: [
+        {
+          type: "web_search_20250305",
+          name: "web_search",
+          max_uses: 5,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+      ],
+      messages: [{ role: "user", content: prompt }],
     });
 
-    const articles: Article[] = deduped.slice(0, 5).map(({ pubDate: _p, ...a }) => a);
+    // Extract text block from response
+    const textBlock = message.content.find((block) => block.type === "text");
+    if (!textBlock || textBlock.type !== "text") {
+      throw new Error("No text response from Anthropic");
+    }
 
-    if (articles.length === 0) {
-      return NextResponse.json(
-        { error: "No articles found — feeds may be temporarily unavailable" },
-        { status: 503 }
-      );
+    let articles: Article[];
+    try {
+      const raw = textBlock.text.trim();
+      const jsonMatch = raw.match(/\[[\s\S]*\]/);
+      articles = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
+    } catch {
+      throw new Error("Failed to parse articles JSON from Anthropic response");
     }
 
     const fetched_at = new Date().toISOString();
+
+    // Save to Supabase cache (silent fail)
     await saveBriefing(sectionId, edition, articles);
 
     return NextResponse.json({ articles, cached: false, fetched_at });

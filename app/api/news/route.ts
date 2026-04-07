@@ -55,6 +55,7 @@ Return the results as a JSON array of exactly 5 objects. Each object must have:
 - "summary": string (2-3 sentence summary of the story)
 - "source": string (publication name, e.g. "Bloomberg", "Reuters")
 - "url": string (article URL if available — omit field if not found)
+- "pubDate": string (article publication date/time in ISO 8601 format, e.g. "2026-04-08T09:30:00Z" — use your best estimate based on the article, omit if truly unknown)
 
 Respond with ONLY a valid JSON array — no markdown fences, no explanation, just the raw array.`;
 

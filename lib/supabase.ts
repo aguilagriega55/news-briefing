@@ -15,6 +15,7 @@ export interface Article {
   summary: string;
   source: string;
   url?: string;
+  pubDate?: string;
 }
 
 export interface Briefing {

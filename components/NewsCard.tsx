@@ -5,7 +5,26 @@ interface NewsCardProps {
   index: number;
 }
 
+function formatArticleDate(pubDate?: string): string | null {
+  if (!pubDate) return null;
+  try {
+    const d = new Date(pubDate);
+    if (isNaN(d.getTime())) return null;
+    return d.toLocaleDateString("en-AU", {
+      day: "numeric",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+  } catch {
+    return null;
+  }
+}
+
 export default function NewsCard({ article, index }: NewsCardProps) {
+  const dateLabel = formatArticleDate(article.pubDate);
+
   return (
     <div style={styles.card}>
       <div style={styles.indexBadge}>{index + 1}</div>
@@ -23,7 +42,15 @@ export default function NewsCard({ article, index }: NewsCardProps) {
           <p style={styles.titlePlain}>{article.title}</p>
         )}
         <p style={styles.summary}>{article.summary}</p>
-        <span style={styles.source}>{article.source}</span>
+        <div style={styles.meta}>
+          <span style={styles.source}>{article.source}</span>
+          {dateLabel && (
+            <>
+              <span style={styles.metaDot}>·</span>
+              <span style={styles.pubDate}>{dateLabel}</span>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -61,14 +88,12 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: "1.4",
     marginBottom: "6px",
     textDecoration: "none",
-    cursor: "pointer",
   },
   titlePlain: {
     color: "#e2e2f0",
     fontSize: "14px",
     fontWeight: 600,
     lineHeight: "1.4",
-    marginBottom: "6px",
     margin: "0 0 6px 0",
   },
   summary: {
@@ -77,11 +102,26 @@ const styles: Record<string, React.CSSProperties> = {
     lineHeight: "1.5",
     margin: "0 0 8px 0",
   },
+  meta: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+  },
   source: {
     color: "#6c6c8a",
     fontSize: "11px",
     fontFamily: "monospace",
     textTransform: "uppercase",
     letterSpacing: "0.05em",
+  },
+  metaDot: {
+    color: "#3a3a5c",
+    fontSize: "11px",
+    fontFamily: "monospace",
+  },
+  pubDate: {
+    color: "#6c6c8a",
+    fontSize: "11px",
+    fontFamily: "monospace",
   },
 };

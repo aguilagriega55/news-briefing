@@ -60,6 +60,20 @@ coach news, match results if tournament is underway, host city updates.
 Return exactly 5 items, each clearly attributed to a specific national team.`,
   },
   {
+    id: "tech",
+    title: "AI & Tech",
+    sources: "The Verge · Wired · Ars Technica · Bloomberg Tech",
+    icon: "🤖",
+    prompt: `Search for today's top 5 AI and technology news stories.
+Sources to prioritise: The Verge, Wired, Ars Technica, Bloomberg Technology, MIT Technology Review, TechCrunch, Reuters Technology.
+Coverage MUST include a mix:
+- At least 2 stories specifically about AI (models, research breakthroughs, regulation, company moves)
+- At least 1 story about Big Tech (Apple, Google, Meta, Microsoft, Amazon, Nvidia)
+- 1-2 stories on broader tech: startups, cybersecurity, semiconductors, or policy
+Prioritise stories with genuine industry significance — product launches, funding rounds, regulatory actions, research papers.
+Return exactly 5 items. Each must have a clear source attribution.`,
+  },
+  {
     id: "sports",
     title: "NFL · AFL · Liga MX",
     sources: "ESPN · AFL.com.au · Record · Reforma",

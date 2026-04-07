@@ -1,11 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
+import Parser from "rss-parser";
 import { sections } from "@/lib/sections";
 import { getCachedBriefing, saveBriefing, Article } from "@/lib/supabase";
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
+const parser = new Parser({
+  timeout: 8000,
+  headers: { "User-Agent": "Mozilla/5.0 (compatible; NewsBriefing/1.0)" },
 });
+
+async function fetchFeed(
+  url: string,
+  source: string
+): Promise<Article[]> {
+  try {
+    const feed = await parser.parseURL(url);
+    return (feed.items || []).slice(0, 10).map((item) => ({
+      title: (item.title || "").trim().slice(0, 120),
+      summary: (item.contentSnippet || item.content || item.summary || "")
+        .replace(/<[^>]+>/g, "")
+        .trim()
+        .slice(0, 300),
+      source: feed.title || source,
+      url: item.link || item.guid || undefined,
+      pubDate: item.isoDate || item.pubDate || "",
+    }));
+  } catch {
+    return [];
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,59 +59,48 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Live fetch from Anthropic
-    const editionLabel = edition === "morning" ? "morning" : "evening";
-    const prompt = `${section.prompt}
+    // Fetch all feeds in parallel
+    const results = await Promise.all(
+      section.feeds.map((f) => fetchFeed(f.url, f.source))
+    );
 
-Return exactly 5 articles as a JSON array. Each article must have these fields:
-- title: string (headline, max 100 chars)
-- summary: string (2-3 sentence summary of the story)
-- source: string (publication name, e.g. "Reuters", "BBC")
-- url: string (article URL if available, otherwise omit)
+    // Merge, sort by date (newest first), deduplicate by title, take top 5
+    const all: (Article & { pubDate: string })[] = results
+      .flat()
+      .filter((a) => a.title && a.summary) as (Article & { pubDate: string })[];
 
-Today is ${new Date().toLocaleDateString("en-AU", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}. This is the ${editionLabel} edition.
-
-Respond with ONLY valid JSON — no markdown, no explanation, just the array.`;
-
-    const message = await anthropic.messages.create({
-      model: "claude-opus-4-5",
-      max_tokens: 2048,
-      tools: [
-        {
-          type: "web_search_20250305",
-          name: "web_search",
-          max_uses: 3,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any,
-      ],
-      messages: [{ role: "user", content: prompt }],
+    const seen = new Set<string>();
+    const deduped = all.filter((a) => {
+      const key = a.title.toLowerCase().slice(0, 60);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
     });
 
-    // Extract text from response
-    const textBlock = message.content.find((block) => block.type === "text");
-    if (!textBlock || textBlock.type !== "text") {
-      throw new Error("No text response from Anthropic");
-    }
+    deduped.sort((a, b) => {
+      const da = a.pubDate ? new Date(a.pubDate).getTime() : 0;
+      const db = b.pubDate ? new Date(b.pubDate).getTime() : 0;
+      return db - da;
+    });
 
-    let articles: Article[];
-    try {
-      const raw = textBlock.text.trim();
-      const jsonMatch = raw.match(/\[[\s\S]*\]/);
-      articles = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
-    } catch {
-      throw new Error("Failed to parse articles JSON from response");
+    const articles: Article[] = deduped.slice(0, 5).map(({ pubDate: _p, ...a }) => a);
+
+    if (articles.length === 0) {
+      return NextResponse.json(
+        { error: "No articles found — feeds may be temporarily unavailable" },
+        { status: 503 }
+      );
     }
 
     const fetched_at = new Date().toISOString();
-
-    // Save to cache (silent fail)
     await saveBriefing(sectionId, edition, articles);
 
     return NextResponse.json({ articles, cached: false, fetched_at });
   } catch (error) {
-    console.error("News API error:", error);
+    const msg = error instanceof Error ? error.message : String(error);
+    console.error("[news] ERROR:", msg);
     return NextResponse.json(
-      { error: "Failed to fetch news" },
+      { error: "Failed to fetch news", detail: msg },
       { status: 500 }
     );
   }

@@ -1,6 +1,8 @@
 import { supabase, Briefing, Article } from "@/lib/supabase";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 interface DayGroup {
   date: string;
   morning: Briefing[];

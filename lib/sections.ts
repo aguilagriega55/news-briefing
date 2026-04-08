@@ -15,6 +15,30 @@ For each item also provide:
 
 export const sections: Section[] = [
   {
+    id: "latest",
+    title: "Latest News",
+    sources: "All Sources",
+    icon: "⚡",
+    accent: "#60A5FA",
+    prompt: `You are a chief news editor. Search the web for the most important and breaking news stories RIGHT NOW across all beats: finance, politics, world affairs, Australia, sports, technology, and any major breaking story.
+
+Pick the 8 most significant stories happening today — the ones a well-informed person absolutely needs to know right now. Mix topics naturally. Lead with the most urgent/impactful story.
+
+Sources: Reuters, Bloomberg, BBC, ABC Australia, AP, Guardian.
+
+Return exactly 8 items as a JSON array. Each object must have:
+- "title": string (headline, max 100 chars)
+- "summary": string (2-3 sentence summary)
+- "source": string (publication name)
+- "url": string or omit if not found
+- "sentiment": "positive" | "negative" | "neutral"
+- "tag": string (beat label — e.g. "Markets", "Politics", "Breaking", "Australia", "Sports", "World", "Tech")
+- "image_url": string or null
+- "pubDate": ISO 8601 date/time or omit if unknown
+
+Respond with ONLY a valid JSON array — no markdown, no explanation.`,
+  },
+  {
     id: "finance",
     title: "Finance & Economy",
     sources: "Bloomberg · Reuters · The Economist",

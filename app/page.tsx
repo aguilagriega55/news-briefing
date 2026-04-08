@@ -16,21 +16,23 @@ export default function Home() {
 
   const section = sections[activeTab];
 
+  const today = new Date().toLocaleDateString("en-AU", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
   return (
     <main style={styles.main}>
       <div style={styles.container}>
+
+        {/* Header */}
         <header style={styles.header}>
           <div style={styles.headerTop}>
             <div>
               <h1 style={styles.title}>News Briefing</h1>
-              <p style={styles.date}>
-                {new Date().toLocaleDateString("en-AU", {
-                  weekday: "long",
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </p>
+              <p style={styles.date}>{today}</p>
             </div>
             <div style={styles.headerRight}>
               <Link href="/history" style={styles.archiveLink}>
@@ -58,6 +60,7 @@ export default function Home() {
               </div>
             </div>
           </div>
+          <div style={styles.rule} />
         </header>
 
         {/* Tab bar */}
@@ -72,13 +75,14 @@ export default function Home() {
               }}
             >
               <span style={styles.tabIcon}>{s.icon}</span>
-              <span style={styles.tabLabel}>{s.title}</span>
+              <span>{s.title}</span>
             </button>
           ))}
         </div>
 
         {/* Active section */}
-        <SectionPanel key={section.id} section={section} edition={edition} />
+        <SectionPanel key={`${section.id}-${edition}`} section={section} edition={edition} />
+
       </div>
     </main>
   );
@@ -87,98 +91,115 @@ export default function Home() {
 const styles: Record<string, React.CSSProperties> = {
   main: {
     minHeight: "100vh",
-    background: "#0a0a14",
-    padding: "28px 16px",
+    padding: "36px 20px 60px",
   },
   container: {
-    maxWidth: "800px",
+    maxWidth: "820px",
     margin: "0 auto",
   },
   header: {
-    marginBottom: "20px",
+    marginBottom: "28px",
   },
   headerTop: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "flex-start",
+    marginBottom: "20px",
   },
   title: {
-    color: "#e2e2f0",
-    fontSize: "22px",
+    fontFamily: "var(--font-display)",
+    fontSize: "clamp(36px, 6vw, 52px)",
     fontWeight: 800,
-    margin: "0 0 4px 0",
-    letterSpacing: "-0.02em",
+    background: "linear-gradient(135deg, #60A5FA 0%, #A78BFA 100%)",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+    backgroundClip: "text",
+    margin: "0 0 6px 0",
+    lineHeight: 1.1,
   },
   date: {
-    color: "#6c6c8a",
-    fontSize: "11px",
-    fontFamily: "monospace",
+    color: "var(--text-dim)",
+    fontSize: "12px",
+    fontFamily: "var(--font-mono)",
     margin: 0,
+    letterSpacing: "0.04em",
   },
   headerRight: {
     display: "flex",
     flexDirection: "column",
     alignItems: "flex-end",
-    gap: "8px",
+    gap: "10px",
+    flexShrink: 0,
   },
   archiveLink: {
-    color: "#6c6c8a",
+    color: "var(--text-dim)",
     fontSize: "11px",
-    fontFamily: "monospace",
+    fontFamily: "var(--font-mono)",
     textDecoration: "none",
+    letterSpacing: "0.04em",
+    transition: "color 0.2s",
   },
   editionToggle: {
     display: "flex",
     gap: "6px",
+    background: "var(--bg2)",
+    border: "1px solid var(--border)",
+    borderRadius: "10px",
+    padding: "4px",
   },
   editionBtn: {
-    background: "#13131f",
-    color: "#6c6c8a",
-    border: "1px solid #1e1e2e",
-    borderRadius: "6px",
-    padding: "5px 12px",
+    background: "transparent",
+    color: "var(--text-dim)",
+    border: "none",
+    borderRadius: "7px",
+    padding: "6px 14px",
     fontSize: "12px",
     cursor: "pointer",
-    fontFamily: "monospace",
+    fontFamily: "var(--font-mono)",
+    transition: "all 0.15s",
   },
   editionBtnActive: {
-    background: "#1e1e2e",
-    color: "#e2e2f0",
-    borderColor: "#3a3a5c",
+    background: "var(--accent)",
+    color: "#fff",
+    boxShadow: "0 0 12px var(--accent-glow)",
+  },
+  rule: {
+    height: "1px",
+    background: "linear-gradient(90deg, var(--accent) 0%, transparent 70%)",
+    opacity: 0.4,
   },
   tabBar: {
     display: "flex",
-    gap: "4px",
-    marginBottom: "16px",
+    gap: "6px",
+    marginBottom: "20px",
     overflowX: "auto",
-    paddingBottom: "2px",
+    paddingBottom: "4px",
     scrollbarWidth: "none",
   },
   tab: {
     display: "flex",
     alignItems: "center",
-    gap: "6px",
-    background: "#13131f",
-    color: "#6c6c8a",
-    border: "1px solid #1e1e2e",
-    borderRadius: "8px",
-    padding: "8px 14px",
+    gap: "7px",
+    background: "var(--bg2)",
+    color: "var(--text-dim)",
+    border: "1px solid var(--border)",
+    borderRadius: "10px",
+    padding: "9px 16px",
     fontSize: "12px",
     cursor: "pointer",
-    fontFamily: "monospace",
+    fontFamily: "var(--font-mono)",
     whiteSpace: "nowrap",
     flexShrink: 0,
-    transition: "all 0.1s",
+    transition: "all 0.15s",
+    letterSpacing: "0.02em",
   },
   tabActive: {
-    background: "#1e1e2e",
-    color: "#e2e2f0",
-    borderColor: "#3a3a5c",
+    background: "rgba(59,130,246,0.15)",
+    color: "var(--accent-bright)",
+    borderColor: "var(--border-bright)",
+    boxShadow: "0 0 16px rgba(59,130,246,0.12)",
   },
   tabIcon: {
     fontSize: "14px",
-  },
-  tabLabel: {
-    fontSize: "12px",
   },
 };

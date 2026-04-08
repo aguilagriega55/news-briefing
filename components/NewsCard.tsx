@@ -5,6 +5,15 @@ interface NewsCardProps {
   index: number;
 }
 
+// Section-keyed gradient placeholders when no image is available
+const gradients = [
+  "linear-gradient(135deg, #1e3a5f 0%, #0f2340 100%)",
+  "linear-gradient(135deg, #1a3a2a 0%, #0d2018 100%)",
+  "linear-gradient(135deg, #3a1a3a 0%, #200d20 100%)",
+  "linear-gradient(135deg, #3a2a1a 0%, #201808 100%)",
+  "linear-gradient(135deg, #1a2a3a 0%, #0d1820 100%)",
+];
+
 function formatArticleDate(pubDate?: string): string | null {
   if (!pubDate) return null;
   try {
@@ -24,10 +33,33 @@ function formatArticleDate(pubDate?: string): string | null {
 
 export default function NewsCard({ article, index }: NewsCardProps) {
   const dateLabel = formatArticleDate(article.pubDate);
+  const gradient = gradients[index % gradients.length];
 
   return (
     <div style={styles.card}>
-      <div style={styles.indexBadge}>{index + 1}</div>
+      {/* Image / placeholder */}
+      <div
+        style={{
+          ...styles.imageWrap,
+          background: article.imageUrl ? undefined : gradient,
+        }}
+      >
+        {article.imageUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={article.imageUrl}
+            alt=""
+            style={styles.image}
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = "none";
+            }}
+          />
+        ) : (
+          <span style={styles.imagePlaceholder}>{index + 1}</span>
+        )}
+      </div>
+
+      {/* Content */}
       <div style={styles.content}>
         {article.url ? (
           <a
@@ -59,47 +91,61 @@ export default function NewsCard({ article, index }: NewsCardProps) {
 const styles: Record<string, React.CSSProperties> = {
   card: {
     display: "flex",
-    gap: "12px",
-    padding: "14px 0",
-    borderBottom: "1px solid #1e1e2e",
+    gap: "16px",
+    padding: "16px 0",
+    borderBottom: "1px solid var(--border)",
+    alignItems: "flex-start",
   },
-  indexBadge: {
+  imageWrap: {
     flexShrink: 0,
-    width: "22px",
-    height: "22px",
-    borderRadius: "4px",
-    background: "#1e1e2e",
-    color: "#6c6c8a",
-    fontSize: "11px",
-    fontFamily: "monospace",
+    width: "80px",
+    height: "60px",
+    borderRadius: "8px",
+    overflow: "hidden",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    marginTop: "2px",
+    border: "1px solid var(--border)",
+  },
+  image: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+  },
+  imagePlaceholder: {
+    color: "rgba(99,157,255,0.3)",
+    fontSize: "22px",
+    fontFamily: "var(--font-display)",
+    fontWeight: 700,
   },
   content: {
     flex: 1,
+    minWidth: 0,
   },
   title: {
     display: "block",
-    color: "#e2e2f0",
+    color: "var(--text-primary)",
     fontSize: "14px",
     fontWeight: 600,
-    lineHeight: "1.4",
+    lineHeight: "1.45",
     marginBottom: "6px",
     textDecoration: "none",
+    fontFamily: "var(--font-body)",
+    letterSpacing: "-0.01em",
   },
   titlePlain: {
-    color: "#e2e2f0",
+    color: "var(--text-primary)",
     fontSize: "14px",
     fontWeight: 600,
-    lineHeight: "1.4",
+    lineHeight: "1.45",
     margin: "0 0 6px 0",
+    fontFamily: "var(--font-body)",
+    letterSpacing: "-0.01em",
   },
   summary: {
-    color: "#9090b0",
-    fontSize: "13px",
-    lineHeight: "1.5",
+    color: "var(--text-secondary)",
+    fontSize: "12.5px",
+    lineHeight: "1.55",
     margin: "0 0 8px 0",
   },
   meta: {
@@ -108,20 +154,21 @@ const styles: Record<string, React.CSSProperties> = {
     gap: "6px",
   },
   source: {
-    color: "#6c6c8a",
-    fontSize: "11px",
-    fontFamily: "monospace",
+    color: "var(--accent-bright)",
+    fontSize: "10px",
+    fontFamily: "var(--font-mono)",
     textTransform: "uppercase",
-    letterSpacing: "0.05em",
+    letterSpacing: "0.06em",
+    opacity: 0.8,
   },
   metaDot: {
-    color: "#3a3a5c",
-    fontSize: "11px",
-    fontFamily: "monospace",
+    color: "var(--text-dim)",
+    fontSize: "10px",
+    fontFamily: "var(--font-mono)",
   },
   pubDate: {
-    color: "#6c6c8a",
-    fontSize: "11px",
-    fontFamily: "monospace",
+    color: "var(--text-dim)",
+    fontSize: "10px",
+    fontFamily: "var(--font-mono)",
   },
 };

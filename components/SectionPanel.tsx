@@ -48,7 +48,12 @@ export default function SectionPanel({ section, edition }: SectionPanelProps) {
     : null;
 
   return (
-    <div style={styles.panel}>
+    <div
+      style={{
+        ...styles.panel,
+        borderLeft: `3px solid ${section.accent}`,
+      }}
+    >
       {/* Panel header */}
       <div style={styles.header}>
         <div style={styles.headerLeft}>
@@ -86,6 +91,8 @@ export default function SectionPanel({ section, edition }: SectionPanelProps) {
             title={state === "loaded" ? "Sync again" : "Sync"}
             style={{
               ...styles.syncBtn,
+              background: section.accent,
+              boxShadow: `0 0 16px ${section.accent}40`,
               ...(state === "loading" ? styles.syncBtnDisabled : {}),
             }}
           >
@@ -103,15 +110,20 @@ export default function SectionPanel({ section, edition }: SectionPanelProps) {
         </div>
       </div>
 
-      {/* Content */}
+      {/* States */}
       {state === "idle" && (
-        <p style={styles.idle}>Press fetch to load the latest briefing.</p>
+        <p style={styles.idle}>Press ⟳ to load the latest briefing.</p>
       )}
 
       {state === "loading" && (
         <div style={styles.loadingWrap}>
-          <div style={styles.loadingBar} />
-          <p style={styles.idle}>Searching for news…</p>
+          <div
+            style={{
+              ...styles.loadingBar,
+              background: `linear-gradient(90deg, transparent, ${section.accent}, transparent)`,
+            }}
+          />
+          <p style={{ ...styles.idle, color: section.accent }}>Fetching live news…</p>
         </div>
       )}
 
@@ -120,9 +132,9 @@ export default function SectionPanel({ section, edition }: SectionPanelProps) {
       )}
 
       {state === "loaded" && result && (
-        <div style={styles.articleList}>
+        <div>
           {result.articles.map((article, i) => (
-            <NewsCard key={i} article={article} index={i} />
+            <NewsCard key={i} article={article} index={i} sectionAccent={section.accent} />
           ))}
         </div>
       )}
@@ -134,7 +146,6 @@ const styles: Record<string, React.CSSProperties> = {
   panel: {
     background: "var(--bg2)",
     border: "1px solid var(--border)",
-    borderLeft: "3px solid var(--accent)",
     borderRadius: "14px",
     padding: "24px 28px",
     boxShadow: "0 4px 32px rgba(0,0,0,0.3)",
@@ -204,7 +215,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: "var(--font-mono)",
   },
   syncBtn: {
-    background: "var(--accent)",
     color: "#fff",
     border: "none",
     borderRadius: "50%",
@@ -214,14 +224,13 @@ const styles: Record<string, React.CSSProperties> = {
     alignItems: "center",
     justifyContent: "center",
     cursor: "pointer",
-    boxShadow: "0 0 16px var(--accent-glow)",
     transition: "all 0.15s",
     flexShrink: 0,
   },
   syncBtnDisabled: {
     opacity: 0.5,
     cursor: "not-allowed",
-    boxShadow: "none",
+    boxShadow: "none !important" as "none",
   },
   idle: {
     color: "var(--text-dim)",
@@ -235,20 +244,15 @@ const styles: Record<string, React.CSSProperties> = {
   },
   loadingBar: {
     height: "2px",
-    background: "linear-gradient(90deg, var(--accent), var(--accent-bright), var(--accent))",
     backgroundSize: "200% 100%",
     borderRadius: "2px",
     marginBottom: "12px",
-    animation: "shimmer 1.5s infinite linear",
+    animation: "shimmer 1.2s infinite linear",
   },
   error: {
     color: "#f87171",
     fontSize: "13px",
     fontFamily: "var(--font-mono)",
     margin: "8px 0 0 0",
-  },
-  articleList: {
-    display: "flex",
-    flexDirection: "column",
   },
 };

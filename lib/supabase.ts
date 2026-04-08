@@ -16,7 +16,8 @@ export interface Article {
   source: string;
   url?: string;
   pubDate?: string;
-  imageUrl?: string;
+  image_url?: string | null;
+  sentiment?: "positive" | "negative" | "neutral";
 }
 
 export interface Briefing {

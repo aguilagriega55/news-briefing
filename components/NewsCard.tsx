@@ -1,9 +1,9 @@
 import { Article } from "@/lib/supabase";
+import BiasIndicator from "./BiasIndicator";
 
 interface NewsCardProps {
   article: Article;
   index: number;
-  sectionAccent: string;
 }
 
 function formatArticleDate(pubDate?: string): string | null {
@@ -17,34 +17,27 @@ function formatArticleDate(pubDate?: string): string | null {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
-    });
+    }).toUpperCase();
   } catch {
     return null;
   }
 }
 
 const sentimentConfig = {
-  positive: { label: "↑ Positive", bg: "rgba(16,185,129,0.15)", color: "#34d399", border: "rgba(16,185,129,0.3)" },
-  negative: { label: "↓ Negative", bg: "rgba(239,68,68,0.15)", color: "#f87171", border: "rgba(239,68,68,0.3)" },
-  neutral:  { label: "→ Neutral",  bg: "rgba(99,157,255,0.1)",  color: "#94a3b8", border: "rgba(99,157,255,0.2)" },
+  positive: { label: "↑ Positive", color: "#2d6a4f", border: "#b7d9c5" },
+  negative: { label: "↓ Negative", color: "var(--accent-red)", border: "#e8a9a3" },
+  neutral:  { label: "→ Neutral",  color: "var(--ink-dim)",    border: "var(--rule)" },
 };
 
-export default function NewsCard({ article, index, sectionAccent }: NewsCardProps) {
+export default function NewsCard({ article, index }: NewsCardProps) {
   const dateLabel = formatArticleDate(article.pubDate);
   const sentiment = article.sentiment ? sentimentConfig[article.sentiment] : null;
   const hasImage = !!article.image_url;
 
-  const placeholderGradients = [
-    "linear-gradient(135deg, #1e3358 0%, #0f1e38 100%)",
-    "linear-gradient(135deg, #1e3830 0%, #0f2020 100%)",
-    "linear-gradient(135deg, #38201e 0%, #200f0f 100%)",
-    "linear-gradient(135deg, #1e2838 0%, #0f1820 100%)",
-    "linear-gradient(135deg, #2a1e38 0%, #180f20 100%)",
-  ];
+  return (
+    <div style={styles.article}>
 
-  const cardContent = (
-    <div style={styles.card}>
-      {/* Left: text content */}
+      {/* Text content */}
       <div style={styles.textContent}>
         {article.url ? (
           <a href={article.url} target="_blank" rel="noopener noreferrer" style={styles.title}>
@@ -55,78 +48,73 @@ export default function NewsCard({ article, index, sectionAccent }: NewsCardProp
         )}
         <p style={styles.summary}>{article.summary}</p>
         <div style={styles.meta}>
-          <span style={{ ...styles.source, color: sectionAccent }}>{article.source}</span>
+          <span style={styles.source}>{article.source}</span>
           {dateLabel && (
             <>
-              <span style={styles.metaDot}>·</span>
+              <span style={styles.metaDivider}>·</span>
               <span style={styles.pubDate}>{dateLabel}</span>
             </>
           )}
+          {article.tag && (
+            <>
+              <span style={styles.metaDivider}>·</span>
+              <span style={styles.tag}>{article.tag}</span>
+            </>
+          )}
           {sentiment && (
-            <span
-              style={{
-                ...styles.sentimentPill,
-                background: sentiment.bg,
-                color: sentiment.color,
-                border: `1px solid ${sentiment.border}`,
-              }}
-            >
+            <span style={{
+              ...styles.sentimentPill,
+              color: sentiment.color,
+              borderColor: sentiment.border,
+            }}>
               {sentiment.label}
             </span>
+          )}
+          {article.bias && article.bias_reliability && article.bias_label && (
+            <BiasIndicator
+              position={article.bias}
+              reliability={article.bias_reliability}
+              label={article.bias_label}
+              variant="compact"
+            />
           )}
         </div>
       </div>
 
-      {/* Right: image or placeholder */}
-      <div
-        style={{
-          ...styles.imageWrap,
-          background: hasImage ? "#000" : placeholderGradients[index % placeholderGradients.length],
-          borderColor: sectionAccent + "30",
-        }}
-      >
-        {hasImage ? (
-          // eslint-disable-next-line @next/next/no-img-element
+      {/* Thumbnail — shown only when image available */}
+      {hasImage && (
+        <div style={styles.imageWrap}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={article.image_url!}
             alt=""
             style={styles.image}
             onError={(e) => {
               const wrap = (e.target as HTMLElement).parentElement;
-              if (wrap) {
-                wrap.style.background = placeholderGradients[index % placeholderGradients.length];
-                (e.target as HTMLElement).style.display = "none";
-                const span = document.createElement("span");
-                span.style.cssText = "color:rgba(99,157,255,0.25);font-size:22px;";
-                span.textContent = String(index + 1);
-                wrap.appendChild(span);
-              }
+              if (wrap) wrap.style.display = "none";
             }}
           />
-        ) : (
-          <span style={{ ...styles.imagePlaceholder, color: sectionAccent + "50" }}>
-            {index + 1}
-          </span>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Article number — shown when no image */}
+      {!hasImage && (
+        <span style={styles.index}>{index + 1}</span>
+      )}
+
     </div>
   );
-
-  return cardContent;
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  card: {
+  // Full-bleed row — parent sets margin: "0 -16px" so this spans edge-to-edge
+  article: {
     display: "flex",
-    gap: "16px",
+    gap: "12px",
     alignItems: "flex-start",
-    background: "var(--bg-card)",
-    border: "1px solid var(--border)",
-    borderRadius: "10px",
     padding: "16px",
-    marginBottom: "10px",
-    transition: "border-color 0.15s, transform 0.15s, box-shadow 0.15s",
-    cursor: "default",
+    borderBottom: "1px solid #ddd",
+    background: "var(--paper)",
   },
   textContent: {
     flex: 1,
@@ -134,80 +122,104 @@ const styles: Record<string, React.CSSProperties> = {
   },
   title: {
     display: "block",
-    color: "var(--text-primary)",
-    fontSize: "15px",
-    fontWeight: 600,
-    lineHeight: "1.45",
-    marginBottom: "7px",
-    textDecoration: "none",
     fontFamily: "var(--font-display)",
+    fontSize: "17px",
+    fontWeight: 700,
+    lineHeight: 1.38,
+    color: "var(--ink)",
+    textDecoration: "none",
+    marginBottom: "6px",
     letterSpacing: "-0.01em",
   },
   titlePlain: {
-    color: "var(--text-primary)",
-    fontSize: "15px",
-    fontWeight: 600,
-    lineHeight: "1.45",
-    margin: "0 0 7px 0",
     fontFamily: "var(--font-display)",
+    fontSize: "17px",
+    fontWeight: 700,
+    lineHeight: 1.38,
+    color: "var(--ink)",
+    margin: "0 0 6px 0",
     letterSpacing: "-0.01em",
   },
   summary: {
-    color: "var(--text-secondary)",
-    fontSize: "12.5px",
-    lineHeight: "1.6",
-    margin: "0 0 10px 0",
     fontFamily: "var(--font-body)",
+    fontSize: "14px",
+    lineHeight: 1.6,
+    color: "var(--ink-light)",
+    margin: "0 0 8px 0",
   },
   meta: {
     display: "flex",
     alignItems: "center",
     flexWrap: "wrap",
-    gap: "6px",
+    gap: "5px",
   },
   source: {
-    fontSize: "10px",
     fontFamily: "var(--font-mono)",
+    fontSize: "11px",
     textTransform: "uppercase",
-    letterSpacing: "0.06em",
-    fontWeight: 500,
+    letterSpacing: "0.07em",
+    color: "var(--accent-red)",
   },
-  metaDot: {
-    color: "var(--text-dim)",
-    fontSize: "10px",
+  metaDivider: {
+    fontFamily: "var(--font-mono)",
+    fontSize: "11px",
+    color: "var(--ink-dim)",
   },
   pubDate: {
-    color: "var(--text-dim)",
-    fontSize: "10px",
     fontFamily: "var(--font-mono)",
+    fontSize: "11px",
+    color: "var(--ink-dim)",
+    letterSpacing: "0.03em",
+  },
+  tag: {
+    fontFamily: "var(--font-mono)",
+    fontSize: "11px",
+    color: "var(--ink-dim)",
+    letterSpacing: "0.03em",
+    textTransform: "uppercase",
   },
   sentimentPill: {
-    fontSize: "9px",
     fontFamily: "var(--font-mono)",
-    padding: "2px 7px",
-    borderRadius: "20px",
-    letterSpacing: "0.04em",
-    fontWeight: 500,
+    fontSize: "10px",
+    letterSpacing: "0.05em",
+    textTransform: "uppercase",
+    padding: "1px 6px",
+    border: "1px solid",
+    borderRadius: "2px",
   },
+
+  // Thumbnail
   imageWrap: {
     flexShrink: 0,
-    width: "110px",
-    height: "78px",
-    borderRadius: "8px",
+    width: "88px",
+    height: "66px",
     overflow: "hidden",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    border: "1px solid",
+    borderRadius: "4px",
+    border: "1px solid #ddd",
+    background: "#eee",
+    alignSelf: "flex-start",
+    marginTop: "2px",
   },
   image: {
     width: "100%",
     height: "100%",
     objectFit: "cover",
+    display: "block",
   },
-  imagePlaceholder: {
-    fontSize: "28px",
+
+  // Article number (shown when no image)
+  index: {
     fontFamily: "var(--font-display)",
+    fontSize: "22px",
     fontWeight: 700,
+    fontStyle: "italic",
+    color: "var(--rule)",
+    flexShrink: 0,
+    lineHeight: 1,
+    userSelect: "none",
+    alignSelf: "flex-start",
+    marginTop: "2px",
+    minWidth: "22px",
+    textAlign: "right",
   },
 };

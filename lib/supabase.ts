@@ -18,12 +18,20 @@ export interface Article {
   pubDate?: string;
   image_url?: string | null;
   sentiment?: "positive" | "negative" | "neutral";
+  tag?: string;
+  league?: string;
+  bias?: "left" | "center-left" | "center" | "center-right" | "right";
+  bias_label?: string;
+  bias_reliability?: "high" | "mixed" | "low";
+  story_type?: "news" | "opinion" | "analysis" | "feature";
 }
+
+export type Edition = "morning" | "midday" | "evening" | "midnight";
 
 export interface Briefing {
   id: string;
   section_id: string;
-  edition: "morning" | "evening";
+  edition: Edition;
   articles: Article[];
   fetched_at: string;
   date: string;
@@ -31,12 +39,12 @@ export interface Briefing {
 
 export async function getCachedBriefing(
   sectionId: string,
-  edition: "morning" | "evening"
+  edition: Edition
 ): Promise<Briefing | null> {
   if (!supabaseReady) return null;
   try {
     const today = new Date().toISOString().split("T")[0];
-    const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString();
+    const fiveHoursAgo = new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString();
 
     const { data, error } = await supabase
       .from("briefings")
@@ -44,7 +52,7 @@ export async function getCachedBriefing(
       .eq("section_id", sectionId)
       .eq("edition", edition)
       .eq("date", today)
-      .gte("fetched_at", sixHoursAgo)
+      .gte("fetched_at", fiveHoursAgo)
       .order("fetched_at", { ascending: false })
       .limit(1)
       .single();
@@ -58,7 +66,7 @@ export async function getCachedBriefing(
 
 export async function saveBriefing(
   sectionId: string,
-  edition: "morning" | "evening",
+  edition: Edition,
   articles: Article[]
 ): Promise<void> {
   if (!supabaseReady) return;

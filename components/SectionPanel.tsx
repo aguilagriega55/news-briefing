@@ -7,7 +7,7 @@ import NewsCard from "./NewsCard";
 
 interface SectionPanelProps {
   section: Section;
-  edition: "morning" | "evening";
+  edition: "morning" | "midday" | "evening" | "midnight";
 }
 
 interface FetchResult {
@@ -48,38 +48,24 @@ export default function SectionPanel({ section, edition }: SectionPanelProps) {
     : null;
 
   return (
-    <div
-      style={{
-        ...styles.panel,
-        borderLeft: `3px solid ${section.accent}`,
-      }}
-    >
-      {/* Panel header */}
+    <div style={styles.panel}>
+      {/* Header */}
       <div style={styles.header}>
         <div style={styles.headerLeft}>
-          <span style={styles.icon}>{section.icon}</span>
-          <div>
-            <h2 style={styles.title}>{section.title}</h2>
-            <div style={styles.sourcePills}>
-              {section.sources.split("·").map((s) => (
-                <span key={s} style={styles.sourcePill}>{s.trim()}</span>
-              ))}
-            </div>
+          <h2 style={styles.title}>{section.label}</h2>
+          <div style={styles.sourcePills}>
+            {section.sources.split("·").map((s) => (
+              <span key={s} style={styles.sourcePill}>{s.trim()}</span>
+            ))}
           </div>
         </div>
-
         <div style={styles.headerRight}>
           {state === "loaded" && result && formattedTime && (
             <div style={styles.statusRow}>
-              <span
-                style={{
-                  ...styles.dot,
-                  background: result.cached ? "#22c55e" : "#3b82f6",
-                  boxShadow: result.cached
-                    ? "0 0 6px rgba(34,197,94,0.5)"
-                    : "0 0 6px rgba(59,130,246,0.5)",
-                }}
-              />
+              <span style={{
+                ...styles.dot,
+                background: result.cached ? "#2d6a4f" : "var(--accent-red)",
+              }} />
               <span style={styles.statusLabel}>
                 {result.cached ? "cached" : "live"} · {formattedTime}
               </span>
@@ -91,21 +77,13 @@ export default function SectionPanel({ section, edition }: SectionPanelProps) {
             title={state === "loaded" ? "Sync again" : "Sync"}
             style={{
               ...styles.syncBtn,
-              background: section.accent,
-              boxShadow: `0 0 16px ${section.accent}40`,
-              ...(state === "loading" ? styles.syncBtnDisabled : {}),
+              ...(state === "loading" ? { opacity: 0.5, cursor: "not-allowed" } : {}),
             }}
           >
-            <span
-              style={{
-                display: "inline-block",
-                animation: state === "loading" ? "spin 0.8s linear infinite" : "none",
-                fontSize: "16px",
-                lineHeight: 1,
-              }}
-            >
-              ⟳
-            </span>
+            <span style={{
+              display: "inline-block",
+              animation: state === "loading" ? "spin 0.8s linear infinite" : "none",
+            }}>⟳</span>
           </button>
         </div>
       </div>
@@ -116,14 +94,14 @@ export default function SectionPanel({ section, edition }: SectionPanelProps) {
       )}
 
       {state === "loading" && (
-        <div style={styles.loadingWrap}>
-          <div
-            style={{
-              ...styles.loadingBar,
-              background: `linear-gradient(90deg, transparent, ${section.accent}, transparent)`,
-            }}
-          />
-          <p style={{ ...styles.idle, color: section.accent }}>Fetching live news…</p>
+        <div style={{ paddingTop: "4px" }}>
+          {[88, 72, 80, 65, 76].map((w, i) => (
+            <div key={i} style={{ marginBottom: "18px" }}>
+              <div className="shimmer" style={{ height: "14px", width: `${w}%`, marginBottom: "6px" }} />
+              <div className="shimmer" style={{ height: "10px", width: `${Math.round(w * 0.75)}%`, marginBottom: "4px" }} />
+              <div className="shimmer" style={{ height: "10px", width: `${Math.round(w * 0.55)}%` }} />
+            </div>
+          ))}
         </div>
       )}
 
@@ -134,7 +112,7 @@ export default function SectionPanel({ section, edition }: SectionPanelProps) {
       {state === "loaded" && result && (
         <div>
           {result.articles.map((article, i) => (
-            <NewsCard key={i} article={article} index={i} sectionAccent={section.accent} />
+            <NewsCard key={i} article={article} index={i} />
           ))}
         </div>
       )}
@@ -144,115 +122,99 @@ export default function SectionPanel({ section, edition }: SectionPanelProps) {
 
 const styles: Record<string, React.CSSProperties> = {
   panel: {
-    background: "var(--bg2)",
-    border: "1px solid var(--border)",
-    borderRadius: "14px",
-    padding: "24px 28px",
-    boxShadow: "0 4px 32px rgba(0,0,0,0.3)",
+    paddingTop: "20px",
+    borderTop: "1px solid var(--rule)",
   },
   header: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: "20px",
-    gap: "16px",
+    marginBottom: "16px",
+    paddingBottom: "12px",
+    borderBottom: "1px solid var(--rule)",
+    gap: "12px",
   },
   headerLeft: {
-    display: "flex",
-    gap: "14px",
-    alignItems: "flex-start",
     flex: 1,
   },
   headerRight: {
     display: "flex",
     flexDirection: "column",
     alignItems: "flex-end",
-    gap: "8px",
+    gap: "6px",
     flexShrink: 0,
   },
-  icon: {
-    fontSize: "26px",
-    lineHeight: 1,
-    marginTop: "2px",
-  },
   title: {
-    color: "var(--text-primary)",
-    fontSize: "17px",
+    fontFamily: "var(--font-display)",
+    color: "var(--ink)",
+    fontSize: "22px",
     fontWeight: 700,
-    margin: "0 0 8px 0",
-    fontFamily: "var(--font-body)",
+    fontStyle: "italic",
     letterSpacing: "-0.01em",
+    margin: "0 0 7px 0",
+    lineHeight: 1.1,
   },
   sourcePills: {
     display: "flex",
     flexWrap: "wrap",
-    gap: "6px",
+    gap: "5px",
   },
   sourcePill: {
-    background: "rgba(59,130,246,0.1)",
-    border: "1px solid rgba(99,157,255,0.2)",
-    color: "var(--accent-bright)",
-    fontSize: "10px",
     fontFamily: "var(--font-mono)",
-    padding: "2px 8px",
-    borderRadius: "20px",
-    letterSpacing: "0.03em",
+    fontSize: "9px",
+    color: "var(--ink-dim)",
+    textTransform: "uppercase",
+    letterSpacing: "0.06em",
+    border: "1px solid var(--rule)",
+    padding: "1px 6px",
+    borderRadius: "1px",
   },
   statusRow: {
     display: "flex",
     alignItems: "center",
-    gap: "6px",
+    gap: "5px",
   },
   dot: {
-    width: "7px",
-    height: "7px",
+    width: "6px",
+    height: "6px",
     borderRadius: "50%",
     flexShrink: 0,
   },
   statusLabel: {
-    color: "var(--text-dim)",
-    fontSize: "11px",
     fontFamily: "var(--font-mono)",
+    fontSize: "9px",
+    color: "var(--ink-dim)",
+    textTransform: "uppercase",
+    letterSpacing: "0.05em",
   },
   syncBtn: {
-    color: "#fff",
+    background: "var(--ink)",
+    color: "var(--paper)",
     border: "none",
-    borderRadius: "50%",
-    width: "36px",
-    height: "36px",
+    borderRadius: "1px",
+    width: "28px",
+    height: "28px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     cursor: "pointer",
-    transition: "all 0.15s",
+    fontSize: "14px",
     flexShrink: 0,
-  },
-  syncBtnDisabled: {
-    opacity: 0.5,
-    cursor: "not-allowed",
-    boxShadow: "none !important" as "none",
+    transition: "opacity 0.12s",
   },
   idle: {
-    color: "var(--text-dim)",
-    fontSize: "13px",
     fontFamily: "var(--font-mono)",
-    margin: "8px 0 0 0",
-    letterSpacing: "0.02em",
-  },
-  loadingWrap: {
-    paddingTop: "8px",
-  },
-  loadingBar: {
-    height: "2px",
-    backgroundSize: "200% 100%",
-    borderRadius: "2px",
-    marginBottom: "12px",
-    animation: "shimmer 1.2s infinite linear",
+    fontSize: "11px",
+    color: "var(--ink-dim)",
+    textTransform: "uppercase",
+    letterSpacing: "0.06em",
+    padding: "24px 0",
   },
   error: {
-    color: "#f87171",
-    fontSize: "13px",
     fontFamily: "var(--font-mono)",
-    margin: "8px 0 0 0",
+    fontSize: "11px",
+    color: "var(--accent-red)",
+    padding: "24px 0",
+    letterSpacing: "0.04em",
   },
 };

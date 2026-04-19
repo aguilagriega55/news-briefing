@@ -1,12 +1,16 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
-import { sections } from "@/lib/sections";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { SECTIONS } from "@/lib/sections";
 import { Article } from "@/lib/supabase";
-import NewsCard from "@/components/NewsCard";
+import { DebateTopic } from "@/lib/debate-generator";
+import LeadStory from "@/components/LeadStory";
+import StoryRow from "@/components/StoryRow";
+import DebatePanel from "@/components/DebatePanel";
+import TickerStrip from "@/components/TickerStrip";
 import Link from "next/link";
 
-type Edition = "morning" | "evening";
+type Edition = "morning" | "midday" | "evening" | "midnight";
 type SectionState = "idle" | "loading" | "loaded" | "error";
 
 interface SectionResult {
@@ -17,24 +21,107 @@ interface SectionResult {
   error: string;
 }
 
+const TABS = SECTIONS;
+
+const EDITION_CYCLE: Edition[] = ["morning", "midday", "evening", "midnight"];
+const EDITION_LABELS: Record<Edition, string> = {
+  morning:  "6AM",
+  midday:   "12PM",
+  evening:  "6PM",
+  midnight: "12AM",
+};
+
+function getCurrentEdition(): Edition {
+  const h = new Date().getHours();
+  if (h >= 5  && h < 11) return "morning";
+  if (h >= 11 && h < 17) return "midday";
+  if (h >= 17 && h < 23) return "evening";
+  return "midnight";
+}
+
+function cycleEdition(current: Edition): Edition {
+  const idx = EDITION_CYCLE.indexOf(current);
+  return EDITION_CYCLE[(idx + 1) % EDITION_CYCLE.length];
+}
+
 function initResults(): Record<string, SectionResult> {
   return Object.fromEntries(
-    sections.map((s) => [
+    SECTIONS.map((s) => [
       s.id,
       { state: "idle", articles: [], cached: false, fetched_at: "", error: "" },
     ])
   );
 }
 
-export default function Home() {
-  const [edition, setEdition] = useState<Edition>(() =>
-    new Date().getHours() < 12 ? "morning" : "evening"
+function LoadingSkeleton() {
+  return (
+    <div style={{ margin: "0 -16px" }}>
+      <div style={{ padding: "16px", borderBottom: "1px solid #e5e5e5" }}>
+        <div className="shimmer" style={{ height: "12px", width: "28%", marginBottom: "8px" }} />
+        <div className="shimmer" style={{ height: "32px", width: "96%", marginBottom: "6px" }} />
+        <div className="shimmer" style={{ height: "32px", width: "72%", marginBottom: "12px" }} />
+        <div className="shimmer" style={{ height: "11px", width: "50%", marginBottom: "14px" }} />
+        <div className="shimmer" style={{ width: "100%", paddingTop: "56.25%", borderRadius: "4px" }} />
+      </div>
+      {[0, 1, 2].map((i) => (
+        <div key={i} style={{ display: "flex", gap: "14px", padding: "16px", borderBottom: "1px solid #e5e5e5" }}>
+          <div style={{ flex: 1 }}>
+            <div className="shimmer" style={{ height: "11px", width: "26%", marginBottom: "8px" }} />
+            <div className="shimmer" style={{ height: "20px", width: "92%", marginBottom: "6px" }} />
+            <div className="shimmer" style={{ height: "20px", width: "68%", marginBottom: "8px" }} />
+            <div className="shimmer" style={{ height: "15px", width: "80%", marginBottom: "5px" }} />
+            <div className="shimmer" style={{ height: "15px", width: "58%", marginBottom: "9px" }} />
+            <div className="shimmer" style={{ height: "11px", width: "44%" }} />
+          </div>
+          <div className="shimmer" style={{ flexShrink: 0, width: "80px", height: "80px", borderRadius: "4px" }} />
+        </div>
+      ))}
+    </div>
   );
-  const [activeTab, setActiveTab] = useState(0);
+}
+
+export default function Home() {
+  const [edition, setEdition] = useState<Edition>(() => getCurrentEdition());
+  const [activeTab, setActiveTab] = useState<string>("latest");
   const [results, setResults] = useState<Record<string, SectionResult>>(initResults);
+  const [debateTopics, setDebateTopics] = useState<DebateTopic[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
   const fetchSection = useCallback(async (sectionId: string, ed: Edition) => {
+    if (sectionId === "debate") {
+      setResults((prev) => ({
+        ...prev,
+        debate: { ...prev.debate, state: "loading", error: "" },
+      }));
+      try {
+        const res = await fetch("/api/debate");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        setDebateTopics(data.topics as DebateTopic[]);
+        setResults((prev) => ({
+          ...prev,
+          debate: {
+            state: "loaded",
+            articles: [],
+            cached: data.cached,
+            fetched_at: new Date().toISOString(),
+            error: "",
+          },
+        }));
+      } catch (err) {
+        setResults((prev) => ({
+          ...prev,
+          debate: {
+            ...prev.debate,
+            state: "error",
+            error: err instanceof Error ? err.message : "Unknown error",
+          },
+        }));
+      }
+      return;
+    }
+
     setResults((prev) => ({
       ...prev,
       [sectionId]: { ...prev[sectionId], state: "loading", error: "" },
@@ -69,28 +156,49 @@ export default function Home() {
     }
   }, []);
 
-  // Auto-fetch all sections on mount
   useEffect(() => {
-    sections.forEach((s) => fetchSection(s.id, edition));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    SECTIONS.forEach((s) => fetchSection(s.id, edition));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Re-fetch all when edition changes
   useEffect(() => {
     setResults(initResults());
-    sections.forEach((s) => fetchSection(s.id, edition));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    setDebateTopics([]);
+    setActiveFilter(null);
+    SECTIONS.forEach((s) => fetchSection(s.id, edition));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [edition]);
 
-  async function refreshAll() {
+  async function handleRefreshAll() {
     setRefreshing(true);
     setResults(initResults());
-    await Promise.all(sections.map((s) => fetchSection(s.id, edition)));
+    setDebateTopics([]);
+    setActiveFilter(null);
+    await Promise.all(SECTIONS.map((s) => fetchSection(s.id, edition)));
     setRefreshing(false);
   }
 
-  const section = sections[activeTab];
+  function selectTab(id: string) {
+    setActiveTab(id);
+    setActiveFilter(null);
+  }
+
+  const section = SECTIONS.find((s) => s.id === activeTab) ?? SECTIONS[0];
   const result = results[section.id];
+
+  const allLoaded = SECTIONS.every((s) => results[s.id].state !== "loading");
+  const loadedCount = SECTIONS.filter((s) => results[s.id].state === "loaded").length;
+
+  const uniqueTags = useMemo(() => {
+    if (section.id === "debate" || result.articles.length === 0) return [];
+    const tags = result.articles.map((a) => a.tag).filter((t): t is string => Boolean(t));
+    return [...new Set(tags)];
+  }, [result.articles, section.id]);
+
+  const filteredArticles = useMemo(() => {
+    if (!activeFilter) return result.articles;
+    return result.articles.filter((a) => a.tag === activeFilter);
+  }, [result.articles, activeFilter]);
 
   const formattedTime = result.fetched_at
     ? new Date(result.fetched_at).toLocaleTimeString("en-AU", {
@@ -99,235 +207,272 @@ export default function Home() {
       })
     : null;
 
-  const allLoaded = sections.every((s) => results[s.id].state !== "loading");
-  const loadedCount = sections.filter((s) => results[s.id].state === "loaded").length;
-
   return (
-    <main style={styles.main}>
-      <div style={styles.container}>
-
-        {/* Header */}
-        <header style={styles.header}>
-          <div style={styles.headerTop}>
-            <div>
-              <h1 style={styles.title}>News Briefing</h1>
-              <p style={styles.date}>
-                {new Date().toLocaleDateString("en-AU", {
-                  weekday: "long",
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
-              </p>
-            </div>
-            <div style={styles.headerRight}>
-              <Link href="/history" style={styles.archiveLink}>View archive →</Link>
-              <div style={styles.controls}>
-                {/* Edition toggle */}
-                <div style={styles.editionToggle}>
-                  <button
-                    onClick={() => setEdition("morning")}
-                    style={{ ...styles.editionBtn, ...(edition === "morning" ? styles.editionBtnActive : {}) }}
-                  >☀️ AM</button>
-                  <button
-                    onClick={() => setEdition("evening")}
-                    style={{ ...styles.editionBtn, ...(edition === "evening" ? styles.editionBtnActive : {}) }}
-                  >🌙 PM</button>
-                </div>
-                {/* Refresh All */}
-                <button
-                  onClick={refreshAll}
-                  disabled={refreshing || !allLoaded}
-                  style={{
-                    ...styles.refreshBtn,
-                    ...(!allLoaded || refreshing ? styles.refreshBtnDisabled : {}),
-                  }}
-                >
-                  <span style={{
-                    display: "inline-block",
-                    animation: (!allLoaded || refreshing) ? "spin 0.8s linear infinite" : "none",
-                    marginRight: "6px",
-                  }}>⟳</span>
-                  {!allLoaded ? `Loading ${loadedCount}/${sections.length}…` : "Refresh All"}
-                </button>
-              </div>
-            </div>
+    <>
+      {/* ── Sticky header ───────────────────────────────── */}
+      <header style={{
+        background: "#000",
+        padding: "12px 16px",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        position: "sticky",
+        top: 0,
+        zIndex: 100,
+        minHeight: "58px",
+      }}>
+        <div>
+          <div style={{
+            fontFamily: "'Playfair Display', serif",
+            fontSize: "22px",
+            fontWeight: 900,
+            color: "#fff",
+            letterSpacing: "-0.5px",
+            lineHeight: 1.1,
+          }}>
+            The Daily Brief
           </div>
-          <div style={styles.rule} />
-        </header>
-
-        {/* Tab bar */}
-        <div style={styles.tabBar}>
-          {sections.map((s, i) => {
-            const r = results[s.id];
-            const isLoading = r.state === "loading";
-            return (
-              <button
-                key={s.id}
-                onClick={() => setActiveTab(i)}
-                style={{
-                  ...styles.tab,
-                  ...(activeTab === i ? { ...styles.tabActive, borderColor: s.accent + "60", color: s.accent } : {}),
-                }}
-              >
-                <span style={{ display: "inline-block", animation: isLoading ? "spin 0.8s linear infinite" : "none" }}>
-                  {s.icon}
-                </span>
-                <span>{s.title}</span>
-                {r.state === "loaded" && (
-                  <span style={{ ...styles.tabBadge, background: s.accent + "25", color: s.accent }}>
-                    {r.articles.length}
-                  </span>
-                )}
-              </button>
-            );
-          })}
+          <div style={{
+            fontFamily: "'DM Mono', monospace",
+            fontSize: "9px",
+            color: "#888",
+            letterSpacing: "0.15em",
+            textTransform: "uppercase",
+            marginTop: "2px",
+          }}>
+            Rafa Frías &amp; Family
+          </div>
         </div>
+        <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+          {/* Edition pill — cycles on tap */}
+          <button
+            onClick={() => setEdition(cycleEdition(edition))}
+            style={{
+              fontFamily: "'DM Mono', monospace",
+              fontSize: "10px",
+              letterSpacing: "0.1em",
+              padding: "5px 10px",
+              background: "rgba(255,255,255,0.15)",
+              color: "#fff",
+              border: "1px solid #444",
+              borderRadius: "4px",
+              minHeight: "30px",
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {EDITION_LABELS[edition]}
+          </button>
+          {/* Refresh */}
+          <button
+            onClick={handleRefreshAll}
+            disabled={refreshing || !allLoaded}
+            style={{
+              fontSize: !allLoaded ? "11px" : "16px",
+              fontFamily: !allLoaded ? "var(--font-mono)" : "inherit",
+              padding: "5px 10px",
+              background: "transparent",
+              color: !allLoaded || refreshing ? "#666" : "#fff",
+              border: "1px solid #444",
+              borderRadius: "4px",
+              minHeight: "30px",
+              minWidth: "36px",
+              cursor: !allLoaded || refreshing ? "default" : "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <span style={{
+              display: "inline-block",
+              animation: (!allLoaded || refreshing) ? "spin 0.8s linear infinite" : "none",
+            }}>
+              {!allLoaded ? `${loadedCount}/${SECTIONS.length}` : "↻"}
+            </span>
+          </button>
+        </div>
+      </header>
 
-        {/* Active section panel */}
-        <div style={{ ...styles.panel, borderLeft: `3px solid ${section.accent}` }}>
-          {/* Panel header */}
-          <div style={styles.panelHeader}>
-            <div style={styles.panelHeaderLeft}>
-              <span style={styles.panelIcon}>{section.icon}</span>
-              <div>
-                <h2 style={styles.panelTitle}>{section.title}</h2>
-                <div style={styles.sourcePills}>
-                  {section.sources.split("·").map((src) => (
-                    <span key={src} style={styles.sourcePill}>{src.trim()}</span>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div style={styles.panelHeaderRight}>
-              {result.state === "loaded" && formattedTime && (
-                <div style={styles.statusRow}>
-                  <span style={{
-                    ...styles.dot,
-                    background: result.cached ? "#22c55e" : "#3b82f6",
-                    boxShadow: result.cached ? "0 0 6px rgba(34,197,94,0.5)" : "0 0 6px rgba(59,130,246,0.5)",
-                  }} />
-                  <span style={styles.statusLabel}>
-                    {result.cached ? "cached" : "live"} · {formattedTime}
-                  </span>
-                </div>
-              )}
-              <button
-                onClick={() => fetchSection(section.id, edition)}
-                disabled={result.state === "loading"}
-                title="Sync this section"
-                style={{
-                  ...styles.syncBtn,
-                  background: section.accent,
-                  boxShadow: `0 0 14px ${section.accent}40`,
-                  ...(result.state === "loading" ? { opacity: 0.5, cursor: "not-allowed" } : {}),
-                }}
-              >
+      {/* ── Sticky ticker (top: 58) ───────────────────── */}
+      <div style={{ position: "sticky", top: "58px", zIndex: 99 }}>
+        <TickerStrip />
+      </div>
+
+      {/* ── Sticky tab navigation (top: 102) ─────────── */}
+      <nav style={{
+        display: "flex",
+        overflowX: "auto",
+        scrollbarWidth: "none",
+        background: "#fff",
+        borderBottom: "1px solid #e5e5e5",
+        position: "sticky",
+        top: "102px",
+        zIndex: 98,
+        WebkitOverflowScrolling: "touch",
+      }}>
+        {TABS.map((s) => (
+          <button
+            key={s.id}
+            onClick={() => selectTab(s.id)}
+            style={{
+              flexShrink: 0,
+              padding: "13px 15px",
+              fontSize: "13px",
+              fontWeight: 700,
+              fontFamily: "var(--font-ui)",
+              color: activeTab === s.id ? "#000" : "#aaa",
+              borderBottom: activeTab === s.id ? "3px solid #000" : "3px solid transparent",
+              borderTop: "none",
+              borderLeft: "none",
+              borderRight: "none",
+              background: "none",
+              whiteSpace: "nowrap",
+              minHeight: "46px",
+              cursor: "pointer",
+              letterSpacing: "0.02em",
+              WebkitTapHighlightColor: "transparent",
+            }}
+          >
+            {s.label}
+          </button>
+        ))}
+      </nav>
+
+      {/* ── Main content ──────────────────────────────── */}
+      <main style={{ minHeight: "100vh", background: "#fff" }}>
+        <div style={styles.container} className="page-content">
+
+          {/* Context line */}
+          <p style={styles.contextLine}>
+            <span>{section.sources}</span>
+            {formattedTime && (
+              <span style={styles.contextStatus}>
+                {" · "}
                 <span style={{
                   display: "inline-block",
-                  animation: result.state === "loading" ? "spin 0.8s linear infinite" : "none",
-                  fontSize: "16px",
-                }}>⟳</span>
-              </button>
-            </div>
-          </div>
+                  width: "5px",
+                  height: "5px",
+                  borderRadius: "50%",
+                  background: result.cached ? "#16a34a" : "#dc2626",
+                  verticalAlign: "middle",
+                  marginRight: "3px",
+                }} />
+                {result.cached ? "cached" : "live"} {formattedTime}
+              </span>
+            )}
+          </p>
 
-          {/* Content */}
-          {result.state === "idle" && (
-            <p style={styles.idle}>Loading…</p>
-          )}
-          {result.state === "loading" && (
-            <div>
-              <div style={{
-                height: "2px",
-                background: `linear-gradient(90deg, transparent, ${section.accent}, transparent)`,
-                backgroundSize: "200% 100%",
-                animation: "shimmer 1.2s infinite linear",
-                borderRadius: "2px",
-                marginBottom: "12px",
-              }} />
-              <p style={{ ...styles.idle, color: section.accent }}>Fetching live news…</p>
-            </div>
-          )}
-          {result.state === "error" && (
-            <p style={styles.error}>⚠ {result.error}</p>
-          )}
-          {result.state === "loaded" && (
-            <div>
-              {result.articles.map((article, i) => (
-                <NewsCard key={i} article={article} index={i} sectionAccent={section.accent} />
+          {/* Filter pills */}
+          {uniqueTags.length > 0 && (
+            <div className="filter-row">
+              {uniqueTags.map((tag) => (
+                <button
+                  key={tag}
+                  onClick={() => setActiveFilter(activeFilter === tag ? null : tag)}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    height: "30px",
+                    padding: "0 10px",
+                    border: "1px solid",
+                    borderColor: activeFilter === tag ? "#000" : "#ddd",
+                    borderRadius: "15px",
+                    background: activeFilter === tag ? "#000" : "#fff",
+                    color: activeFilter === tag ? "#fff" : "#666",
+                    fontFamily: "var(--font-mono)",
+                    fontSize: "11px",
+                    letterSpacing: "0.03em",
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
+                    WebkitTapHighlightColor: "transparent",
+                    minHeight: 0,
+                  }}
+                >
+                  {tag}
+                </button>
               ))}
             </div>
           )}
-        </div>
 
-      </div>
-    </main>
+          {/* Loading skeleton */}
+          {(result.state === "idle" || result.state === "loading") && <LoadingSkeleton />}
+
+          {/* Error */}
+          {result.state === "error" && (
+            <p style={styles.errorMsg}>⚠ {result.error}</p>
+          )}
+
+          {/* Debate */}
+          {result.state === "loaded" && section.id === "debate" && debateTopics.length > 0 && (
+            <DebatePanel topics={debateTopics} />
+          )}
+
+          {/* Articles */}
+          {result.state === "loaded" && section.id !== "debate" && (
+            <div style={{ margin: "0 -16px" }}>
+              {filteredArticles.length === 0 && (
+                <p style={styles.emptyFilter}>No stories match this filter.</p>
+              )}
+              {filteredArticles[0] && <LeadStory article={filteredArticles[0]} />}
+              {filteredArticles.slice(1).map((article, i) => (
+                <StoryRow key={i} article={article} />
+              ))}
+            </div>
+          )}
+
+          {/* Archive link */}
+          <div style={styles.archiveRow}>
+            <Link href="/history" style={styles.archiveLink}>Archive →</Link>
+          </div>
+
+        </div>
+      </main>
+    </>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  main: { minHeight: "100vh", padding: "36px 20px 60px" },
-  container: { maxWidth: "820px", margin: "0 auto" },
-  header: { marginBottom: "24px" },
-  headerTop: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" },
-  title: {
-    fontFamily: "var(--font-display)",
-    fontSize: "clamp(36px, 6vw, 52px)",
-    fontWeight: 800,
-    background: "linear-gradient(135deg, #60A5FA 0%, #A78BFA 100%)",
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent",
-    backgroundClip: "text",
-    margin: "0 0 6px 0",
-    lineHeight: 1.1,
+  container: {
+    maxWidth: "820px",
+    margin: "0 auto",
+    padding: "0 16px",
   },
-  date: { color: "var(--text-dim)", fontSize: "12px", fontFamily: "var(--font-mono)", margin: 0, letterSpacing: "0.04em" },
-  headerRight: { display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "10px", flexShrink: 0 },
-  archiveLink: { color: "var(--text-dim)", fontSize: "11px", fontFamily: "var(--font-mono)", textDecoration: "none", letterSpacing: "0.04em" },
-  controls: { display: "flex", gap: "8px", alignItems: "center" },
-  editionToggle: { display: "flex", gap: "4px", background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "10px", padding: "4px" },
-  editionBtn: { background: "transparent", color: "var(--text-dim)", border: "none", borderRadius: "7px", padding: "6px 12px", fontSize: "12px", cursor: "pointer", fontFamily: "var(--font-mono)", transition: "all 0.15s" },
-  editionBtnActive: { background: "var(--accent)", color: "#fff", boxShadow: "0 0 12px var(--accent-glow)" },
-  refreshBtn: {
-    display: "flex", alignItems: "center",
-    background: "rgba(59,130,246,0.12)",
-    color: "var(--accent-bright)",
-    border: "1px solid var(--border-bright)",
-    borderRadius: "8px",
-    padding: "7px 14px",
-    fontSize: "12px",
+  contextLine: {
     fontFamily: "var(--font-mono)",
-    cursor: "pointer",
-    letterSpacing: "0.02em",
-    transition: "all 0.15s",
-    whiteSpace: "nowrap",
+    fontSize: "11px",
+    color: "#888",
+    fontStyle: "italic",
+    letterSpacing: "0.03em",
+    padding: "10px 0 6px",
   },
-  refreshBtnDisabled: { opacity: 0.6, cursor: "not-allowed" },
-  rule: { height: "1px", background: "linear-gradient(90deg, var(--accent) 0%, transparent 70%)", opacity: 0.4 },
-  tabBar: { display: "flex", gap: "6px", marginBottom: "16px", overflowX: "auto", paddingBottom: "4px", scrollbarWidth: "none" },
-  tab: {
-    display: "flex", alignItems: "center", gap: "7px",
-    background: "var(--bg2)", color: "var(--text-dim)",
-    border: "1px solid var(--border)", borderRadius: "10px",
-    padding: "8px 14px", fontSize: "12px", cursor: "pointer",
-    fontFamily: "var(--font-mono)", whiteSpace: "nowrap", flexShrink: 0,
-    transition: "all 0.15s", letterSpacing: "0.02em",
+  contextStatus: {
+    fontStyle: "normal",
   },
-  tabActive: { background: "rgba(59,130,246,0.1)" },
-  tabBadge: { fontSize: "10px", padding: "1px 6px", borderRadius: "10px", fontWeight: 600 },
-  panel: { background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: "14px", padding: "24px 28px", boxShadow: "0 4px 32px rgba(0,0,0,0.3)" },
-  panelHeader: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px", gap: "16px" },
-  panelHeaderLeft: { display: "flex", gap: "14px", alignItems: "flex-start", flex: 1 },
-  panelHeaderRight: { display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "8px", flexShrink: 0 },
-  panelIcon: { fontSize: "26px", lineHeight: 1, marginTop: "2px" },
-  panelTitle: { color: "var(--text-primary)", fontSize: "17px", fontWeight: 700, margin: "0 0 8px 0", fontFamily: "var(--font-body)", letterSpacing: "-0.01em" },
-  sourcePills: { display: "flex", flexWrap: "wrap", gap: "6px" },
-  sourcePill: { background: "rgba(59,130,246,0.1)", border: "1px solid rgba(99,157,255,0.2)", color: "var(--accent-bright)", fontSize: "10px", fontFamily: "var(--font-mono)", padding: "2px 8px", borderRadius: "20px", letterSpacing: "0.03em" },
-  statusRow: { display: "flex", alignItems: "center", gap: "6px" },
-  dot: { width: "7px", height: "7px", borderRadius: "50%", flexShrink: 0 },
-  statusLabel: { color: "var(--text-dim)", fontSize: "11px", fontFamily: "var(--font-mono)" },
-  syncBtn: { color: "#fff", border: "none", borderRadius: "50%", width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.15s", flexShrink: 0 },
-  idle: { color: "var(--text-dim)", fontSize: "13px", fontFamily: "var(--font-mono)", margin: "8px 0 0 0", letterSpacing: "0.02em" },
-  error: { color: "#f87171", fontSize: "13px", fontFamily: "var(--font-mono)", margin: "8px 0 0 0" },
+  errorMsg: {
+    fontFamily: "var(--font-mono)",
+    fontSize: "13px",
+    color: "#dc2626",
+    padding: "24px 0",
+    letterSpacing: "0.04em",
+  },
+  emptyFilter: {
+    fontFamily: "var(--font-mono)",
+    fontSize: "11px",
+    color: "#888",
+    padding: "20px 16px",
+    letterSpacing: "0.04em",
+  },
+  archiveRow: {
+    padding: "24px 0 8px",
+    display: "flex",
+    justifyContent: "flex-end",
+  },
+  archiveLink: {
+    fontFamily: "var(--font-mono)",
+    fontSize: "11px",
+    color: "#888",
+    textDecoration: "none",
+    letterSpacing: "0.04em",
+  },
 };

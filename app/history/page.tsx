@@ -1,12 +1,15 @@
-import { supabase, Briefing, Article } from "@/lib/supabase";
+import { supabase, Briefing } from "@/lib/supabase";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
 
 interface DayGroup {
   date: string;
-  morning: Briefing[];
-  evening: Briefing[];
+  morning: boolean;
+  midday: boolean;
+  evening: boolean;
+  midnight: boolean;
+  sectionCount: number;
 }
 
 async function getBriefingHistory(): Promise<DayGroup[]> {
@@ -15,240 +18,237 @@ async function getBriefingHistory(): Promise<DayGroup[]> {
 
   const { data, error } = await supabase
     .from("briefings")
-    .select("*")
+    .select("date, edition, section_id")
     .gte("date", fourteenDaysAgo.toISOString().split("T")[0])
-    .order("date", { ascending: false })
-    .order("fetched_at", { ascending: false });
+    .order("date", { ascending: false });
 
   if (error || !data) return [];
 
-  const grouped: Record<string, DayGroup> = {};
-  for (const briefing of data as Briefing[]) {
-    if (!grouped[briefing.date]) {
-      grouped[briefing.date] = { date: briefing.date, morning: [], evening: [] };
-    }
-    grouped[briefing.date][briefing.edition].push(briefing);
+  const grouped: Record<string, { morning: Set<string>; midday: Set<string>; evening: Set<string>; midnight: Set<string> }> = {};
+  for (const row of data as { date: string; edition: string; section_id: string }[]) {
+    if (!grouped[row.date]) grouped[row.date] = { morning: new Set(), midday: new Set(), evening: new Set(), midnight: new Set() };
+    const ed = row.edition as "morning" | "midday" | "evening" | "midnight";
+    if (grouped[row.date][ed]) grouped[row.date][ed].add(row.section_id);
   }
 
-  return Object.values(grouped).sort((a, b) => b.date.localeCompare(a.date));
+  return Object.entries(grouped)
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([date, { morning, midday, evening, midnight }]) => ({
+      date,
+      morning: morning.size > 0,
+      midday: midday.size > 0,
+      evening: evening.size > 0,
+      midnight: midnight.size > 0,
+      sectionCount: morning.size + midday.size + evening.size + midnight.size,
+    }));
 }
 
-function formatDate(dateStr: string) {
+function formatDateHeader(dateStr: string) {
   return new Date(dateStr + "T00:00:00").toLocaleDateString("en-AU", {
     weekday: "long",
-    year: "numeric",
-    month: "long",
     day: "numeric",
+    month: "long",
+    year: "numeric",
   });
 }
 
-function EditionBlock({
-  label,
-  briefings,
-}: {
-  label: string;
-  briefings: Briefing[];
-}) {
-  if (briefings.length === 0) return null;
-
-  const uniqueSections = [...new Set(briefings.map((b) => b.section_id))];
-
-  return (
-    <details style={styles.details}>
-      <summary style={styles.summary}>
-        <span style={styles.summaryLabel}>{label}</span>
-        <span style={styles.summaryMeta}>{uniqueSections.length} sections</span>
-      </summary>
-      <div style={styles.sectionList}>
-        {briefings.map((briefing) => (
-          <div key={briefing.id} style={styles.sectionBlock}>
-            <p style={styles.sectionId}>{briefing.section_id}</p>
-            {(briefing.articles as Article[]).map((article, i) => (
-              <div key={i} style={styles.articleRow}>
-                <span style={styles.articleNum}>{i + 1}</span>
-                <div>
-                  {article.url ? (
-                    <a
-                      href={article.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={styles.articleTitle}
-                    >
-                      {article.title}
-                    </a>
-                  ) : (
-                    <span style={styles.articleTitle}>{article.title}</span>
-                  )}
-                  <p style={styles.articleSource}>{article.source}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        ))}
-      </div>
-    </details>
-  );
+function formatDateShort(dateStr: string) {
+  return new Date(dateStr + "T00:00:00").toLocaleDateString("en-AU", {
+    day: "numeric",
+    month: "short",
+  });
 }
 
 export default async function HistoryPage() {
   const days = await getBriefingHistory();
 
   return (
-    <main style={styles.main}>
-      <div style={styles.container}>
-        <header style={styles.header}>
-          <div style={styles.headerTop}>
-            <div>
-              <h1 style={styles.title}>Archive</h1>
-              <p style={styles.subtitle}>Last 14 days of briefings</p>
-            </div>
-            <Link href="/" style={styles.backLink}>
-              ← Back to dashboard
-            </Link>
-          </div>
-        </header>
+    <>
+      {/* Top bar */}
+      <header style={styles.topBar}>
+        <div>
+          <div style={styles.topBarTitle}>Archive</div>
+          <div style={styles.topBarSubtitle}>The Daily Brief</div>
+        </div>
+        <Link href="/" style={styles.backLink}>← Today</Link>
+      </header>
 
-        {days.length === 0 ? (
-          <p style={styles.empty}>No briefings found yet. Fetch some from the dashboard.</p>
-        ) : (
-          <div>
-            {days.map((day) => (
+      <main style={styles.main}>
+        <div style={styles.container}>
+
+          {days.length === 0 ? (
+            <p style={styles.empty}>No briefings found yet.</p>
+          ) : (
+            days.map((day) => (
               <div key={day.date} style={styles.dayBlock}>
-                <h2 style={styles.dayTitle}>{formatDate(day.date)}</h2>
-                <EditionBlock label="☀️ Morning" briefings={day.morning} />
-                <EditionBlock label="🌙 Evening" briefings={day.evening} />
+                {/* Date header */}
+                <h2 style={styles.dateHeader}>{formatDateHeader(day.date)}</h2>
+
+                {/* Edition rows */}
+                <div style={styles.editionRows}>
+                  {day.morning && (
+                    <Link href={`/history/${day.date}/morning`} style={styles.editionRow}>
+                      <div>
+                        <span style={styles.editionIcon}>☀</span>
+                        <span style={styles.editionLabel}>Morning Edition</span>
+                      </div>
+                      <div style={styles.editionMeta}>
+                        <span style={styles.editionDate}>{formatDateShort(day.date)}</span>
+                        <span style={styles.editionArrow}>→</span>
+                      </div>
+                    </Link>
+                  )}
+                  {day.midday && (
+                    <Link href={`/history/${day.date}/midday`} style={styles.editionRow}>
+                      <div>
+                        <span style={styles.editionIcon}>☀</span>
+                        <span style={styles.editionLabel}>Midday Edition</span>
+                      </div>
+                      <div style={styles.editionMeta}>
+                        <span style={styles.editionDate}>{formatDateShort(day.date)}</span>
+                        <span style={styles.editionArrow}>→</span>
+                      </div>
+                    </Link>
+                  )}
+                  {day.evening && (
+                    <Link href={`/history/${day.date}/evening`} style={styles.editionRow}>
+                      <div>
+                        <span style={styles.editionIcon}>☾</span>
+                        <span style={styles.editionLabel}>Evening Edition</span>
+                      </div>
+                      <div style={styles.editionMeta}>
+                        <span style={styles.editionDate}>{formatDateShort(day.date)}</span>
+                        <span style={styles.editionArrow}>→</span>
+                      </div>
+                    </Link>
+                  )}
+                  {day.midnight && (
+                    <Link href={`/history/${day.date}/midnight`} style={styles.editionRow}>
+                      <div>
+                        <span style={styles.editionIcon}>☾</span>
+                        <span style={styles.editionLabel}>Midnight Edition</span>
+                      </div>
+                      <div style={styles.editionMeta}>
+                        <span style={styles.editionDate}>{formatDateShort(day.date)}</span>
+                        <span style={styles.editionArrow}>→</span>
+                      </div>
+                    </Link>
+                  )}
+                </div>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </main>
+            ))
+          )}
+
+        </div>
+      </main>
+    </>
   );
 }
 
 const styles: Record<string, React.CSSProperties> = {
+  topBar: {
+    background: "#000",
+    padding: "14px 16px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    position: "sticky",
+    top: 0,
+    zIndex: 100,
+  },
+  topBarTitle: {
+    fontFamily: "var(--font-display)",
+    fontSize: "20px",
+    fontWeight: 900,
+    color: "#fff",
+    letterSpacing: "-0.5px",
+    lineHeight: 1.1,
+  },
+  topBarSubtitle: {
+    fontFamily: "var(--font-mono)",
+    fontSize: "9px",
+    color: "#666",
+    letterSpacing: "0.1em",
+    textTransform: "uppercase",
+    marginTop: "2px",
+  },
+  backLink: {
+    fontFamily: "var(--font-mono)",
+    fontSize: "11px",
+    color: "#888",
+    textDecoration: "none",
+    letterSpacing: "0.04em",
+  },
   main: {
     minHeight: "100vh",
-    background: "#0a0a14",
-    padding: "32px 16px",
+    background: "#fff",
+    paddingBottom: "60px",
   },
   container: {
     maxWidth: "760px",
     margin: "0 auto",
-  },
-  header: {
-    marginBottom: "28px",
-  },
-  headerTop: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  title: {
-    color: "#e2e2f0",
-    fontSize: "26px",
-    fontWeight: 800,
-    margin: "0 0 4px 0",
-    letterSpacing: "-0.02em",
-  },
-  subtitle: {
-    color: "#6c6c8a",
-    fontSize: "12px",
-    fontFamily: "monospace",
-    margin: 0,
-  },
-  backLink: {
-    color: "#6c6c8a",
-    fontSize: "12px",
-    fontFamily: "monospace",
-    textDecoration: "none",
-    marginTop: "4px",
+    padding: "0 16px",
   },
   empty: {
-    color: "#4a4a6a",
-    fontSize: "13px",
-    fontFamily: "monospace",
+    fontFamily: "var(--font-mono)",
+    fontSize: "11px",
+    color: "#888",
+    textTransform: "uppercase",
+    letterSpacing: "0.06em",
+    paddingTop: "32px",
   },
   dayBlock: {
-    marginBottom: "24px",
-    borderBottom: "1px solid #1e1e2e",
-    paddingBottom: "24px",
+    paddingTop: "24px",
+    borderTop: "1px solid #f0f0f0",
+    marginTop: "24px",
   },
-  dayTitle: {
-    color: "#e2e2f0",
-    fontSize: "15px",
+  dateHeader: {
+    fontFamily: "var(--font-display)",
+    fontSize: "18px",
     fontWeight: 700,
+    color: "#000",
+    letterSpacing: "-0.01em",
     margin: "0 0 12px 0",
   },
-  details: {
-    marginBottom: "8px",
+  editionRows: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "4px",
   },
-  summary: {
+  editionRow: {
     display: "flex",
     alignItems: "center",
-    gap: "10px",
-    cursor: "pointer",
-    padding: "8px 12px",
-    background: "#13131f",
-    borderRadius: "6px",
-    border: "1px solid #1e1e2e",
-    listStyle: "none",
-    userSelect: "none",
-  },
-  summaryLabel: {
-    color: "#a0a0c0",
-    fontSize: "13px",
-    fontFamily: "monospace",
-    flex: 1,
-  },
-  summaryMeta: {
-    color: "#6c6c8a",
-    fontSize: "11px",
-    fontFamily: "monospace",
-  },
-  sectionList: {
-    paddingTop: "8px",
-    paddingLeft: "8px",
-  },
-  sectionBlock: {
-    marginBottom: "16px",
-    padding: "12px",
-    background: "#0f0f1a",
-    borderRadius: "6px",
-    border: "1px solid #1a1a2e",
-  },
-  sectionId: {
-    color: "#6c6c8a",
-    fontSize: "10px",
-    fontFamily: "monospace",
-    textTransform: "uppercase",
-    letterSpacing: "0.08em",
-    margin: "0 0 10px 0",
-  },
-  articleRow: {
-    display: "flex",
-    gap: "10px",
-    marginBottom: "8px",
-  },
-  articleNum: {
-    color: "#4a4a6a",
-    fontSize: "11px",
-    fontFamily: "monospace",
-    flexShrink: 0,
-    marginTop: "2px",
-  },
-  articleTitle: {
-    color: "#c0c0d8",
-    fontSize: "13px",
-    fontWeight: 500,
-    lineHeight: "1.4",
+    justifyContent: "space-between",
+    padding: "12px 0",
+    borderBottom: "1px solid #f5f5f5",
     textDecoration: "none",
-    display: "block",
+    color: "inherit",
+    minHeight: "44px",
   },
-  articleSource: {
-    color: "#4a4a6a",
-    fontSize: "11px",
-    fontFamily: "monospace",
-    margin: "2px 0 0 0",
+  editionIcon: {
+    fontSize: "15px",
+    marginRight: "10px",
+  },
+  editionLabel: {
+    fontFamily: "var(--font-mono)",
+    fontSize: "12px",
+    color: "#333",
+    letterSpacing: "0.04em",
+  },
+  editionMeta: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+  },
+  editionDate: {
+    fontFamily: "var(--font-mono)",
+    fontSize: "10px",
+    color: "#aaa",
+    letterSpacing: "0.04em",
+  },
+  editionArrow: {
+    fontFamily: "var(--font-mono)",
+    fontSize: "14px",
+    color: "#ccc",
   },
 };

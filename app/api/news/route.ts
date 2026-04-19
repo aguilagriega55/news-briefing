@@ -1,107 +1,59 @@
 import { NextRequest, NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
-import { sections } from "@/lib/sections";
-import { getCachedBriefing, saveBriefing, Article } from "@/lib/supabase";
+import { RSS_FEEDS } from "@/lib/rss-feeds";
+import { fetchRSSFeeds } from "@/lib/rss-fetcher";
+import { summariseWithHaiku } from "@/lib/haiku-summariser";
+import { SECTION_INSTRUCTIONS } from "@/lib/section-instructions";
+import { getCachedBriefing, saveBriefing } from "@/lib/supabase";
+import { STORY_COUNT } from "@/lib/sections";
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
-});
+export const runtime = "nodejs";
+export const maxDuration = 60;
 
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const body = await request.json();
-    const { sectionId, edition } = body as {
-      sectionId: string;
-      edition: "morning" | "evening";
-    };
+    const { sectionId, edition, bypassCache } = await req.json();
 
-    if (!sectionId || !edition) {
-      return NextResponse.json(
-        { error: "sectionId and edition are required" },
-        { status: 400 }
-      );
+    const feeds = RSS_FEEDS[sectionId as keyof typeof RSS_FEEDS];
+    if (!feeds) {
+      return NextResponse.json({ error: "Unknown section" }, { status: 400 });
     }
 
-    const section = sections.find((s) => s.id === sectionId);
-    if (!section) {
-      return NextResponse.json({ error: "Invalid sectionId" }, { status: 400 });
+    // 1. Check cache (unless cron bypass)
+    if (!bypassCache) {
+      const cached = await getCachedBriefing(sectionId, edition);
+      if (cached) {
+        return NextResponse.json({
+          articles: cached.articles,
+          fetched_at: cached.fetched_at,
+          cached: true,
+        });
+      }
     }
 
-    // Check cache first
-    const cached = await getCachedBriefing(sectionId, edition);
-    if (cached) {
-      return NextResponse.json({
-        articles: cached.articles,
-        cached: true,
-        fetched_at: cached.fetched_at,
-      });
+    // 2. Fetch RSS feeds
+    console.log(`[news] Fetching RSS for ${sectionId}...`);
+    const rawArticles = await fetchRSSFeeds(feeds);
+    console.log(`[news] Got ${rawArticles.length} raw articles for ${sectionId}`);
+
+    if (rawArticles.length === 0) {
+      return NextResponse.json({ error: "No RSS articles fetched" }, { status: 502 });
     }
 
-    // Live fetch from Anthropic
-    const editionLabel = edition === "morning" ? "morning" : "evening";
-    const today = new Date().toLocaleDateString("en-AU", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+    // 3. Summarise with Haiku
+    const count = STORY_COUNT[sectionId] ?? 5;
+    const instructions = SECTION_INSTRUCTIONS[sectionId] ?? "";
+    console.log(`[news] Sending ${Math.min(rawArticles.length, 30)} articles to Haiku...`);
+    const articles = await summariseWithHaiku(sectionId, rawArticles, count, instructions);
+    console.log(`[news] Haiku returned ${articles.length} curated articles`);
 
-    const prompt = `${section.prompt}
-
-Today is ${today}. This is the ${editionLabel} edition.
-
-Return the results as a JSON array of exactly 5 objects. Each object must have:
-- "title": string (headline, max 100 chars)
-- "summary": string (2-3 sentence summary of the story)
-- "source": string (publication name, e.g. "Bloomberg", "Reuters")
-- "url": string (article URL if available — omit if not found)
-- "pubDate": string (ISO 8601 date/time, e.g. "2026-04-08T09:30:00Z" — omit if unknown)
-- "image_url": string or null (the article's og:image or main photo URL — null if not found)
-- "sentiment": "positive" | "negative" | "neutral" (tone of the story)
-
-Respond with ONLY a valid JSON array — no markdown fences, no explanation, just the raw array.`;
-
-    const message = await anthropic.messages.create({
-      model: "claude-opus-4-5",
-      max_tokens: 2048,
-      tools: [
-        {
-          type: "web_search_20250305",
-          name: "web_search",
-          max_uses: 5,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } as any,
-      ],
-      messages: [{ role: "user", content: prompt }],
-    });
-
-    // Extract text block from response
-    const textBlock = message.content.find((block) => block.type === "text");
-    if (!textBlock || textBlock.type !== "text") {
-      throw new Error("No text response from Anthropic");
-    }
-
-    let articles: Article[];
-    try {
-      const raw = textBlock.text.trim();
-      const jsonMatch = raw.match(/\[[\s\S]*\]/);
-      articles = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
-    } catch {
-      throw new Error("Failed to parse articles JSON from Anthropic response");
-    }
-
+    // 4. Save to cache
     const fetched_at = new Date().toISOString();
-
-    // Save to Supabase cache (silent fail)
     await saveBriefing(sectionId, edition, articles);
 
-    return NextResponse.json({ articles, cached: false, fetched_at });
+    return NextResponse.json({ articles, fetched_at, cached: false });
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error("[news] ERROR:", msg);
-    return NextResponse.json(
-      { error: "Failed to fetch news", detail: msg },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to fetch news", detail: msg }, { status: 500 });
   }
 }

@@ -43,7 +43,7 @@ export const RSS_FEEDS: Record<string, { name: string; url: string }[]> = {
     { name: "Ars Technica", url: "https://feeds.arstechnica.com/arstechnica/index" },
     { name: "TechCrunch", url: "https://techcrunch.com/feed/" },
     { name: "MIT Tech Review", url: "https://www.technologyreview.com/feed/" },
-    { name: "Reuters Tech", url: "https://feeds.reuters.com/reuters/technologyNews" },
+    { name: "Hacker News", url: "https://hnrss.org/frontpage" },
   ],
   banking: [
     { name: "Bloomberg Finance", url: "https://feeds.bloomberg.com/markets/news.rss" },
@@ -75,7 +75,7 @@ export const RSS_FEEDS: Record<string, { name: string; url: string }[]> = {
     { name: "Guardian Economy", url: "https://www.theguardian.com/business/economics/rss" },
   ],
   latest: [
-    { name: "Reuters Top News", url: "https://feeds.reuters.com/reuters/topNews" },
+    { name: "NPR News", url: "https://feeds.npr.org/1001/rss.xml" },
     { name: "BBC Top Stories", url: "http://feeds.bbci.co.uk/news/rss.xml" },
     { name: "AP Top News", url: "https://feeds.apnews.com/apf-topnews" },
     { name: "ABC Australia", url: "https://www.abc.net.au/news/feed/45910/rss.xml" },

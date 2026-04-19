@@ -1,7 +1,7 @@
 import Parser from "rss-parser";
 
 const parser = new Parser({
-  timeout: 10000,
+  timeout: 5000,
   headers: { "User-Agent": "NewsBriefing/1.0" },
 });
 

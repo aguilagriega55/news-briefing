@@ -19,10 +19,41 @@ MUST include geographic diversity:
 Prefer The Guardian and Reuters.`,
 
   australia: `Pick top 5 Australian news stories.
-Focus: federal politics, Victorian/NSW state news, economy,
-cost of living, housing, infrastructure, major court cases.
-MUST include at least 1 Melbourne-specific story.
-Prefer ABC Australia, The Age, SMH.`,
+MUST include every day:
+
+ECONOMIC INDICATOR (mandatory 1 story):
+- GDP growth data or projections
+- RBA interest rate decisions or commentary
+- Inflation figures (CPI, PPI)
+- Consumer sentiment index (Westpac-Melbourne Institute)
+- Business/producer confidence (NAB Business Survey)
+- Employment data, unemployment rate
+- Housing prices, construction data
+- Trade balance, current account
+- If no new data released today, use the most recent
+  figures and what economists are projecting next
+
+MELBOURNE/VICTORIA (mandatory 1 story):
+- Local politics, infrastructure, development
+- Victorian economy, business conditions
+- Melbourne cost of living, housing market
+- Local government decisions
+
+FEDERAL AUSTRALIA (mandatory 1 story):
+- Federal politics and parliament
+- National policy: energy, immigration, defence
+- Federal budget, taxation, spending
+
+GENERAL AUSTRALIA (remaining stories):
+- Major court cases, crime
+- Weather events, natural disasters
+- Culture, sport, society
+- Any major breaking Australian news
+
+Sources: ABC Australia, The Age, SMH,
+Guardian Australia, AFR for economic data.
+Tags: Economy | GDP | Sentiment | Melbourne |
+Federal | Victoria | Markets | Housing`,
 
   worldcup: `Pick exactly 6 stories covering all football/soccer.
 Coverage MUST include every day:

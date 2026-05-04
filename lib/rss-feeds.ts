@@ -24,18 +24,35 @@ export const RSS_FEEDS: Record<string, { name: string; url: string }[]> = {
     { name: "ABC Melbourne", url: "https://www.abc.net.au/news/feed/1534/rss.xml" },
   ],
   worldcup: [
+    // International football
     { name: "BBC Sport Football", url: "http://feeds.bbci.co.uk/sport/football/rss.xml" },
-    { name: "ESPN FC", url: "https://www.espn.com/espn/rss/soccer/news" },
-    { name: "Goal.com", url: "https://www.goal.com/feeds/en/news" },
+    { name: "Reuters Sport", url: "https://feeds.reuters.com/reuters/sportsNews" },
+    { name: "ESPN Soccer", url: "https://www.espn.com/espn/rss/soccer/news" },
     { name: "Sky Sports Football", url: "https://www.skysports.com/rss/12040" },
+    { name: "Goal.com", url: "https://www.goal.com/feeds/en/news" },
+    { name: "The Guardian Football", url: "https://www.theguardian.com/football/rss" },
+
+    // Mexican football — Pumas and Liga MX
+    { name: "MedioTiempo", url: "https://www.mediotiempo.com/feed" },
+    { name: "Record Mexico", url: "https://www.record.com.mx/rss" },
+    { name: "Reforma Deportes", url: "https://www.reforma.com/rss/deportes.xml" },
+    { name: "ESPN Mexico", url: "https://espndeportes.espn.com/rss/news" },
   ],
   sports: [
+    // F1
+    { name: "Formula 1", url: "https://www.formula1.com/content/fom-website/en/latest/all.xml" },
+    { name: "Autosport F1", url: "https://www.autosport.com/rss/feed/f1" },
+    { name: "BBC Sport F1", url: "http://feeds.bbci.co.uk/sport/formula1/rss.xml" },
+    { name: "Motorsport.com", url: "https://www.motorsport.com/rss/f1/news/" },
+
+    // AFL
+    { name: "Guardian AFL", url: "https://www.theguardian.com/sport/afl/rss" },
+    { name: "ABC Grandstand", url: "https://www.abc.net.au/news/feed/2942460/rss.xml" },
+
+    // NFL
     { name: "ESPN NFL", url: "https://www.espn.com/espn/rss/nfl/news" },
-    { name: "ESPN AFL", url: "https://www.espn.com/espn/rss/afl/news" },
-    { name: "AFL.com.au", url: "https://www.afl.com.au/rss-feeds/news" },
-    { name: "Reforma Deportes", url: "https://www.reforma.com/rss/deportes.xml" },
-    { name: "Record Mexico", url: "https://www.record.com.mx/rss" },
-    { name: "MedioTiempo", url: "https://www.mediotiempo.com/feed" },
+    { name: "NFL.com", url: "https://www.nfl.com/rss/rsslanding.html" },
+    { name: "CBS Sports NFL", url: "https://www.cbssports.com/rss/headlines/nfl/" },
   ],
   tech: [
     { name: "The Verge", url: "https://www.theverge.com/rss/index.xml" },

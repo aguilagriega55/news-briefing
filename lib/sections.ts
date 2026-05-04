@@ -12,8 +12,8 @@ export const SECTIONS: Section[] = [
   { id: "finance",   label: "FINANCE",   color: "#b45309", sources: "Reuters · CNBC · Bloomberg · FT" },
   { id: "business",  label: "BUSINESS",  color: "#7c3aed", sources: "AFR · SmartCompany · ABC Business" },
   { id: "banking",   label: "BANKING",   color: "#0f766e", sources: "Reuters · FT · Bloomberg · RBA" },
-  { id: "worldcup",  label: "WORLD CUP", color: "#dc2626", sources: "BBC Sport · ESPN · Reuters Sport" },
-  { id: "sports",    label: "SPORTS",    color: "#9333ea", sources: "ESPN · AFL.com.au · Reforma" },
+  { id: "worldcup",  label: "FOOTBALL",  color: "#dc2626", sources: "BBC · ESPN · MedioTiempo · Reforma" },
+  { id: "sports",    label: "SPORTS",    color: "#9333ea", sources: "F1 · AFL · NFL" },
   { id: "running",   label: "RUNNING",   color: "#16a34a", sources: "Triathlete · SwimSwam · VeloNews · World Athletics" },
   { id: "debate",    label: "DEBATE",    color: "#000000", sources: "AI generated · Weekly rotation" },
 ];
@@ -28,7 +28,7 @@ export const STORY_COUNT: Record<string, number> = {
   finance: 5,
   business: 5,
   banking: 5,
-  worldcup: 5,
+  worldcup: 6,
   sports: 5,
   running: 5,
 };

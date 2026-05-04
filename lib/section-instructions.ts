@@ -24,12 +24,37 @@ cost of living, housing, infrastructure, major court cases.
 MUST include at least 1 Melbourne-specific story.
 Prefer ABC Australia, The Age, SMH.`,
 
-  worldcup: `Pick top 5 World Cup 2026 stories.
-CRITICAL: Structure results by NATIONAL TEAM.
-ALWAYS include at least 1 story specifically about Mexico (El Tri).
-Then cover: Argentina, Brazil, England, USA, Spain, France, Germany, Australia.
-Include: squad news, injuries, qualification, match results if available.
-Each headline must name the specific country/team.`,
+  worldcup: `Pick exactly 6 stories covering all football/soccer.
+Coverage MUST include every day:
+
+FIFA WORLD CUP 2026 (min 2 stories):
+- Structure by specific national team, not generic news
+- ALWAYS include at least 1 Mexico national team (El Tri) story
+- Cover: Argentina, Brazil, England, USA, Spain,
+  France, Germany, Australia
+- Qualification updates, squad news, injuries,
+  match results, host city news (USA/Mexico/Canada)
+- Every headline must name the specific country
+
+PUMAS UNAM (min 2 stories — non-negotiable):
+- 1 story about Pumas UNAM MEN (Liga MX)
+  Result, standings, upcoming match, transfers,
+  coach news, player news
+- 1 story about Pumas UNAM WOMEN (Liga MX Femenil)
+  Result, standings, upcoming match, transfers
+- If no news today, use their most recent result
+  or next scheduled fixture
+- Sources: MedioTiempo, Record, Reforma
+
+GENERAL FOOTBALL/SOCCER (min 2 stories):
+- Major European leagues: Premier League, La Liga,
+  Champions League, Serie A, Bundesliga
+- Major transfers, match results, manager news
+- Australian football (A-League) when newsworthy
+
+Add "competition" field to every article:
+"World Cup" | "Pumas Men" | "Pumas Women" |
+"Liga MX" | "Europe" | "A-League" | "International"`,
 
   tech: `Pick top 5 AI and technology stories.
 MUST include:
@@ -82,13 +107,29 @@ Always include at least 1 Victorian/Melbourne business story.
 Sources: AFR, SmartCompany, ABC Business, Business Insider AU.
 Tag each: ASX | Small Business | Retail | Startup | Policy | Economy`,
 
-  sports: `Pick exactly 5 stories covering ALL THREE leagues.
-MANDATORY:
-- NFL: minimum 1 story. Name specific teams. Scores, trades, injuries.
-- AFL: minimum 1 story. Name specific clubs. Results, ladder, trades.
-- Liga MX: minimum 2 stories:
-  * 1 story about Pumas UNAM men's team (search recent match or news)
-  * 1 story about Pumas UNAM women's team / Liga MX Femenil
-  * If no Pumas news, use their last result or next fixture
-Add "league" field to each: "NFL" | "AFL" | "Liga MX"`,
+  sports: `Pick exactly 5 stories covering all three sports.
+MANDATORY every day:
+
+F1 FORMULA 1 (min 1 story):
+- Race results, qualifying, practice sessions
+- Driver standings, constructor championship
+- Team news, car updates, driver transfers
+- Name the specific drivers and teams involved
+
+AFL AUSTRALIAN FOOTBALL (min 2 stories):
+- Name specific clubs in every headline
+- Match results with scores, ladder positions
+- Player trades, injuries, suspensions
+- Finals and premiership news
+- Melbourne-based clubs preferred when newsworthy
+  (Collingwood, Carlton, Melbourne, Richmond,
+   Essendon, Hawthorn, St Kilda, Western Bulldogs,
+   North Melbourne, Footscray)
+
+NFL AMERICAN FOOTBALL (min 1 story):
+- Name specific teams in every headline
+- Scores, standings, playoffs, Super Bowl
+- Trades, injuries, draft news
+
+Add "league" field to every article: "F1" | "AFL" | "NFL"`,
 };

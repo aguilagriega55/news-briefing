@@ -9,6 +9,7 @@ export type CuratedArticle = {
   tag: string;
   story_type: "news" | "opinion" | "analysis" | "feature";
   league?: string;
+  competition?: string;
   image_url?: string | null;
   url?: string;
   pubDate?: string;
@@ -61,6 +62,8 @@ Return ONLY a valid JSON array with exactly ${count} objects. Each object:
 }
 
 story_type guide: "news" = factual reporting of events; "opinion" = editorial/op-ed/commentary; "analysis" = in-depth explanatory piece; "feature" = human-interest or long-form.
+
+If the SPECIAL INSTRUCTIONS above tell you to add an extra field (e.g. "league", "competition"), include that field on EVERY object using one of the allowed values listed.
 
 No markdown, no code fences, no explanation. Only the JSON array.`;
 

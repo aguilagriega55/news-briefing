@@ -63,15 +63,21 @@ export const RSS_FEEDS: Record<string, { name: string; url: string }[]> = {
     { name: "Hacker News", url: "https://hnrss.org/frontpage" },
   ],
   banking: [
+    // Central banks
+    { name: "Federal Reserve", url: "https://www.federalreserve.gov/feeds/press_all.xml" },
+    { name: "ECB News", url: "https://www.ecb.europa.eu/rss/press.html" },
+    { name: "Bank of England", url: "https://www.bankofengland.co.uk/rss/news" },
+    { name: "RBA Speeches", url: "https://www.rba.gov.au/rss/rss-cb-speeches.xml" },
+    { name: "RBA Media Releases", url: "https://www.rba.gov.au/rss/rss-cb-media-releases.xml" },
+    // Banking trade press
+    { name: "Banking Dive", url: "https://www.bankingdive.com/feeds/news/" },
+    { name: "Finextra", url: "https://www.finextra.com/rss/headlines.aspx" },
+    // Markets / finance majors
     { name: "Bloomberg Finance", url: "https://feeds.bloomberg.com/markets/news.rss" },
     { name: "CNBC Finance", url: "https://www.cnbc.com/id/10000664/device/rss/rss.html" },
-    { name: "ECB News", url: "https://www.ecb.europa.eu/rss/press.html" },
-    { name: "RBA News", url: "https://www.rba.gov.au/rss/rss-cb-speeches.xml" },
     { name: "Financial Times", url: "https://www.ft.com/rss/home" },
     { name: "WSJ Markets", url: "https://feeds.a.dj.com/rss/RSSMarketsMain.xml" },
     { name: "MarketWatch", url: "https://feeds.marketwatch.com/marketwatch/topstories/" },
-    { name: "Banking Dive", url: "https://www.bankingdive.com/feeds/news/" },
-    { name: "Finextra", url: "https://www.finextra.com/rss/headlines.aspx" },
   ],
   running: [
     { name: "Triathlete Magazine", url: "https://www.triathlete.com/feed/" },

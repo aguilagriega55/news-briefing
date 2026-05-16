@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { RSS_FEEDS } from "@/lib/rss-feeds";
 import { fetchRSSFeeds } from "@/lib/rss-fetcher";
 import { summariseWithHaiku } from "@/lib/haiku-summariser";
+import { generateBankingBrief } from "@/lib/banking-brief";
 import { SECTION_INSTRUCTIONS } from "@/lib/section-instructions";
 import { getCachedBriefing, saveBriefing } from "@/lib/supabase";
 import { STORY_COUNT } from "@/lib/sections";
@@ -39,12 +40,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No RSS articles fetched" }, { status: 502 });
     }
 
-    // 3. Summarise with Haiku
-    const count = STORY_COUNT[sectionId] ?? 5;
-    const instructions = SECTION_INSTRUCTIONS[sectionId] ?? "";
-    console.log(`[news] Sending ${Math.min(rawArticles.length, 30)} articles to Haiku...`);
-    const articles = await summariseWithHaiku(sectionId, rawArticles, count, instructions);
-    console.log(`[news] Haiku returned ${articles.length} curated articles`);
+    // 3. Summarise — banking uses a bespoke editorial brief (markdown);
+    //    every other section gets the JSON article-list summariser.
+    let articles;
+    if (sectionId === "banking") {
+      console.log(`[news] Generating banking brief from ${Math.min(rawArticles.length, 30)} articles...`);
+      const markdown = await generateBankingBrief(rawArticles, edition);
+      articles = [{ markdown, title: "", summary: "", source: "Banking Brief" }];
+    } else {
+      const count = STORY_COUNT[sectionId] ?? 5;
+      const instructions = SECTION_INSTRUCTIONS[sectionId] ?? "";
+      console.log(`[news] Sending ${Math.min(rawArticles.length, 30)} articles to Haiku...`);
+      articles = await summariseWithHaiku(sectionId, rawArticles, count, instructions);
+      console.log(`[news] Haiku returned ${articles.length} curated articles`);
+    }
 
     // 4. Save to cache
     const fetched_at = new Date().toISOString();

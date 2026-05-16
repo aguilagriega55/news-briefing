@@ -24,6 +24,7 @@ export interface Article {
   bias_label?: string;
   bias_reliability?: "high" | "mixed" | "low";
   story_type?: "news" | "opinion" | "analysis" | "feature";
+  markdown?: string;
 }
 
 export type Edition = "morning" | "midday" | "evening" | "midnight";

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import LeadStory from "@/components/LeadStory";
 import StoryRow from "@/components/StoryRow";
+import BankingBrief from "@/components/BankingBrief";
 
 export const dynamic = "force-dynamic";
 
@@ -79,19 +80,27 @@ export default async function EditionPage({ params }: Props) {
       <main style={styles.main}>
         <div style={styles.container}>
 
-          {orderedSections.map(({ section, articles }) => (
-            <div key={section.id} style={styles.sectionBlock}>
-              <div style={styles.sectionHeader}>
-                <span style={styles.sectionTitle}>{section.label}</span>
+          {orderedSections.map(({ section, articles }) => {
+            const isBankingBrief =
+              section.id === "banking" && articles[0]?.markdown;
+            return (
+              <div key={section.id} style={styles.sectionBlock}>
+                <div style={styles.sectionHeader}>
+                  <span style={styles.sectionTitle}>{section.label}</span>
+                </div>
+                {isBankingBrief ? (
+                  <BankingBrief markdown={articles[0].markdown ?? ""} />
+                ) : (
+                  <div style={{ margin: "0 -16px" }}>
+                    {articles[0] && <LeadStory article={articles[0]} />}
+                    {articles.slice(1).map((a, i) => (
+                      <StoryRow key={i} article={a} />
+                    ))}
+                  </div>
+                )}
               </div>
-              <div style={{ margin: "0 -16px" }}>
-                {articles[0] && <LeadStory article={articles[0]} />}
-                {articles.slice(1).map((a, i) => (
-                  <StoryRow key={i} article={a} />
-                ))}
-              </div>
-            </div>
-          ))}
+            );
+          })}
 
           {orderedSections.length === 0 && (
             <p style={styles.empty}>No articles cached for this edition.</p>

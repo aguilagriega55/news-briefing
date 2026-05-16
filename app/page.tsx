@@ -7,6 +7,7 @@ import { DebateTopic } from "@/lib/debate-generator";
 import LeadStory from "@/components/LeadStory";
 import StoryRow from "@/components/StoryRow";
 import DebatePanel from "@/components/DebatePanel";
+import BankingBrief from "@/components/BankingBrief";
 import TickerStrip from "@/components/TickerStrip";
 import Link from "next/link";
 
@@ -190,7 +191,7 @@ export default function Home() {
   const loadedCount = SECTIONS.filter((s) => results[s.id].state === "loaded").length;
 
   const uniqueTags = useMemo(() => {
-    if (section.id === "debate" || result.articles.length === 0) return [];
+    if (section.id === "debate" || section.id === "banking" || result.articles.length === 0) return [];
     const tags = result.articles.map((a) => a.tag).filter((t): t is string => Boolean(t));
     return [...new Set(tags)];
   }, [result.articles, section.id]);
@@ -408,8 +409,13 @@ export default function Home() {
             <DebatePanel topics={debateTopics} />
           )}
 
+          {/* Banking — editorial markdown brief */}
+          {result.state === "loaded" && section.id === "banking" && (
+            <BankingBrief markdown={result.articles[0]?.markdown ?? ""} />
+          )}
+
           {/* Articles */}
-          {result.state === "loaded" && section.id !== "debate" && (
+          {result.state === "loaded" && section.id !== "debate" && section.id !== "banking" && (
             <div style={{ margin: "0 -16px" }}>
               {filteredArticles.length === 0 && (
                 <p style={styles.emptyFilter}>No stories match this filter.</p>

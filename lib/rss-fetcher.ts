@@ -39,15 +39,19 @@ export async function fetchRSSFeeds(
     })
   );
 
-  const articles: RawArticle[] = [];
+  // Keep each feed's items together (already newest-first per feed), then
+  // round-robin interleave so prolific feeds (e.g. World Cup coverage) can't
+  // crowd out smaller ones (e.g. Pumas/Liga MX) before the summariser sees them.
+  const perFeed: RawArticle[][] = [];
   for (const result of results) {
-    if (result.status === "fulfilled") {
-      articles.push(...result.value);
+    if (result.status === "fulfilled") perFeed.push(result.value);
+  }
+  const interleaved: RawArticle[] = [];
+  const maxLen = perFeed.reduce((m, f) => Math.max(m, f.length), 0);
+  for (let i = 0; i < maxLen; i++) {
+    for (const feed of perFeed) {
+      if (feed[i]) interleaved.push(feed[i]);
     }
   }
-
-  // Sort newest first
-  return articles.sort(
-    (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
-  );
+  return interleaved;
 }

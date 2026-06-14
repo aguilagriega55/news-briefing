@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { SECTIONS } from "@/lib/sections";
+import { SECTIONS, getVisibleSections } from "@/lib/sections";
 import { Article } from "@/lib/supabase";
 import { DebateTopic } from "@/lib/debate-generator";
 import LeadStory from "@/components/LeadStory";
@@ -21,8 +21,6 @@ interface SectionResult {
   fetched_at: string;
   error: string;
 }
-
-const TABS = SECTIONS;
 
 const EDITION_CYCLE: Edition[] = ["morning", "midday", "evening", "midnight"];
 const EDITION_LABELS: Record<Edition, string> = {
@@ -45,9 +43,9 @@ function cycleEdition(current: Edition): Edition {
   return EDITION_CYCLE[(idx + 1) % EDITION_CYCLE.length];
 }
 
-function initResults(): Record<string, SectionResult> {
+function initResults(sections: typeof SECTIONS): Record<string, SectionResult> {
   return Object.fromEntries(
-    SECTIONS.map((s) => [
+    sections.map((s) => [
       s.id,
       { state: "idle", articles: [], cached: false, fetched_at: "", error: "" },
     ])
@@ -82,9 +80,10 @@ function LoadingSkeleton() {
 }
 
 export default function Home() {
+  const [visibleSections, setVisibleSections] = useState<typeof SECTIONS>(SECTIONS);
   const [edition, setEdition] = useState<Edition>(() => getCurrentEdition());
   const [activeTab, setActiveTab] = useState<string>("latest");
-  const [results, setResults] = useState<Record<string, SectionResult>>(initResults);
+  const [results, setResults] = useState<Record<string, SectionResult>>(() => initResults(SECTIONS));
   const [debateTopics, setDebateTopics] = useState<DebateTopic[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
@@ -158,24 +157,29 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    SECTIONS.forEach((s) => fetchSection(s.id, edition));
+    // Resolve the in-window tab set on the client (view-time Melbourne date),
+    // then fetch only those sections. Keeps the static shell deterministic so
+    // the worldcup lifecycle decision isn't frozen into the build.
+    const secs = getVisibleSections();
+    setVisibleSections(secs);
+    secs.forEach((s) => fetchSection(s.id, edition));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    setResults(initResults());
+    setResults(initResults(visibleSections));
     setDebateTopics([]);
     setActiveFilter(null);
-    SECTIONS.forEach((s) => fetchSection(s.id, edition));
+    visibleSections.forEach((s) => fetchSection(s.id, edition));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [edition]);
 
   async function handleRefreshAll() {
     setRefreshing(true);
-    setResults(initResults());
+    setResults(initResults(visibleSections));
     setDebateTopics([]);
     setActiveFilter(null);
-    await Promise.all(SECTIONS.map((s) => fetchSection(s.id, edition)));
+    await Promise.all(visibleSections.map((s) => fetchSection(s.id, edition)));
     setRefreshing(false);
   }
 
@@ -184,11 +188,11 @@ export default function Home() {
     setActiveFilter(null);
   }
 
-  const section = SECTIONS.find((s) => s.id === activeTab) ?? SECTIONS[0];
+  const section = visibleSections.find((s) => s.id === activeTab) ?? visibleSections[0];
   const result = results[section.id];
 
-  const allLoaded = SECTIONS.every((s) => results[s.id].state !== "loading");
-  const loadedCount = SECTIONS.filter((s) => results[s.id].state === "loaded").length;
+  const allLoaded = visibleSections.every((s) => results[s.id].state !== "loading");
+  const loadedCount = visibleSections.filter((s) => results[s.id].state === "loaded").length;
 
   const uniqueTags = useMemo(() => {
     if (section.id === "debate" || section.id === "banking" || result.articles.length === 0) return [];
@@ -288,7 +292,7 @@ export default function Home() {
               display: "inline-block",
               animation: (!allLoaded || refreshing) ? "spin 0.8s linear infinite" : "none",
             }}>
-              {!allLoaded ? `${loadedCount}/${SECTIONS.length}` : "↻"}
+              {!allLoaded ? `${loadedCount}/${visibleSections.length}` : "↻"}
             </span>
           </button>
         </div>
@@ -311,7 +315,7 @@ export default function Home() {
         zIndex: 98,
         WebkitOverflowScrolling: "touch",
       }}>
-        {TABS.map((s) => (
+        {visibleSections.map((s) => (
           <button
             key={s.id}
             onClick={() => selectTab(s.id)}

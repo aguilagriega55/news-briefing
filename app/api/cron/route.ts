@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isWorldCupActive } from "@/lib/sections";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
 const SECTION_IDS = [
   "latest", "australia", "politics", "finance",
-  "business", "banking", "worldcup", "sports", "running",
+  "business", "banking", "football", "worldcup", "sports", "running",
 ];
 
 function getEdition(): "morning" | "midday" | "evening" | "midnight" {
@@ -35,8 +36,13 @@ export async function GET(request: NextRequest) {
 
   const results: Record<string, string> = {};
 
+  // Skip the worldcup section outside the tournament window (Melbourne date).
+  const sectionIds = SECTION_IDS.filter(
+    (id) => id !== "worldcup" || isWorldCupActive()
+  );
+
   // Fetch all news sections sequentially with delay
-  for (const sectionId of SECTION_IDS) {
+  for (const sectionId of sectionIds) {
     try {
       const res = await fetch(`${baseUrl}/api/news`, {
         method: "POST",

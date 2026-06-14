@@ -1,5 +1,6 @@
 import { RawArticle } from "./rss-fetcher";
 import { getBias } from "./source-bias";
+import { toAustralianEnglish } from "./australian-english";
 
 // Belt-and-braces removal of emoji/pictographs the model may still emit.
 // Intentionally excludes arrows (U+2190–21FF) and Latin accents so Spanish
@@ -9,6 +10,9 @@ const EMOJI_RE =
 function stripEmoji(s: string): string {
   return (s ?? "").replace(EMOJI_RE, "").replace(/\s{2,}/g, " ").trim();
 }
+
+// Strip emoji, then enforce Australian English spelling (criterion 12).
+const clean = (s: string) => toAustralianEnglish(stripEmoji(s));
 
 export type CuratedArticle = {
   title: string;
@@ -114,9 +118,9 @@ No markdown, no code fences, no explanation. Only the JSON array.`;
     const biasRating = getBias(article.source);
     return {
       ...article,
-      title: stripEmoji(article.title),
-      summary: stripEmoji(article.summary),
-      tag: stripEmoji(article.tag),
+      title: clean(article.title),
+      summary: clean(article.summary),
+      tag: clean(article.tag),
       image_url: match?.image ?? null,
       ...(biasRating
         ? {

@@ -55,37 +55,31 @@ Guardian Australia, AFR for economic data.
 Tags: Economy | GDP | Sentiment | Melbourne |
 Federal | Victoria | Markets | Housing`,
 
-  worldcup: `Pick exactly 6 stories covering all football/soccer.
-Coverage MUST include every day:
+  worldcup: `Pick exactly 6 stories about the FIFA World Cup 2026.
+Structure every story by a specific national team — name the country
+in the headline. No generic football: this tab is the World Cup only.
 
-FIFA WORLD CUP 2026 (min 2 stories):
-- Structure by specific national team, not generic news
-- ALWAYS include at least 1 Mexico national team (El Tri) story
-- Cover: Argentina, Brazil, England, USA, Spain,
-  France, Germany, Australia
-- Qualification updates, squad news, injuries,
-  match results, host city news (USA/Mexico/Canada)
-- Every headline must name the specific country
+MEXICO — EL TRI (mandatory, at least 1 story):
+- Co-host nation. Latest result, next fixture, group standing,
+  squad / injury / lineup news.
 
-PUMAS UNAM (min 2 stories — non-negotiable):
-- 1 story about Pumas UNAM MEN (Liga MX)
-  Result, standings, upcoming match, transfers,
-  coach news, player news
-- 1 story about Pumas UNAM WOMEN (Liga MX Femenil)
-  Result, standings, upcoming match, transfers
-- If no news today, use their most recent result
-  or next scheduled fixture
-- Sources: Record, Reforma, ESPN Mexico
+AUSTRALIA — SOCCEROOS (mandatory, at least 1 story):
+- Latest result, next fixture, group standing,
+  squad / injury news.
 
-GENERAL FOOTBALL/SOCCER (min 2 stories):
-- Major European leagues: Premier League, La Liga,
-  Champions League, Serie A, Bundesliga
-- Major transfers, match results, manager news
-- Australian football (A-League) when newsworthy
+GENERAL WORLD CUP (remaining stories):
+- Headline nations and any upsets or breakout performers:
+  Argentina, Brazil, England, Spain, France, Germany, USA, etc.
+- Match results, fixtures, group qualification scenarios,
+  confirmed injuries, host-city news (USA / Mexico / Canada).
 
-Add "competition" field to every article:
-"World Cup" | "Pumas Men" | "Pumas Women" |
-"Liga MX" | "Europe" | "A-League" | "International"`,
+Distinguish reported facts (final scores, official lineups,
+federation-confirmed injuries) from speculation (predicted
+lineups, rumoured transfers, betting sentiment).
+If Mexico or Australia have no news today, use their most recent
+result or next scheduled fixture.
+
+Add "competition" field to every article: "World Cup".`,
 
   tech: `Pick top 5 AI and technology stories.
 MUST include:

@@ -1,14 +1,30 @@
 import { createClient } from "@supabase/supabase-js";
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://placeholder.supabase.co";
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "placeholder";
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabaseReady = !!supabaseUrl && !!supabaseKey;
 
-const supabaseReady =
-  !!process.env.NEXT_PUBLIC_SUPABASE_URL &&
-  !!process.env.SUPABASE_SERVICE_ROLE_KEY &&
-  process.env.NEXT_PUBLIC_SUPABASE_URL !== "https://placeholder.supabase.co";
+// Guarded init: when env vars are missing, surface one readable diagnostic
+// instead of crashing inside createClient or silently writing to a fake
+// endpoint. We still return a placeholder-backed client so modules that import
+// `supabase` directly (history pages, debate route) keep a non-null value; the
+// `supabaseReady` guard blocks real reads/writes until the project is configured.
+if (!supabaseReady) {
+  const missing = [
+    !supabaseUrl && "NEXT_PUBLIC_SUPABASE_URL",
+    !supabaseKey && "SUPABASE_SERVICE_ROLE_KEY",
+  ].filter(Boolean);
+  console.error(
+    `[supabase] Caching disabled — missing env var(s): ${missing.join(", ")}. ` +
+      `Briefings will be fetched live and not persisted.`
+  );
+}
+
+export const supabase = createClient(
+  supabaseUrl ?? "https://placeholder.supabase.co",
+  supabaseKey ?? "placeholder"
+);
 
 export interface Article {
   title: string;
@@ -60,7 +76,12 @@ export async function getCachedBriefing(
 
     if (error || !data) return null;
     return data as Briefing;
-  } catch {
+  } catch (err) {
+    console.warn(
+      `[supabase] Cache read failed for ${sectionId}/${edition}: ${
+        err instanceof Error ? err.message : String(err)
+      }`
+    );
     return null;
   }
 }
@@ -77,7 +98,12 @@ export async function saveBriefing(
       edition,
       articles,
     });
-  } catch {
-    // Silently fail — live fetch already succeeded
+  } catch (err) {
+    // Live fetch already succeeded — log but don't fail the request.
+    console.warn(
+      `[supabase] Failed to persist ${sectionId}/${edition}: ${
+        err instanceof Error ? err.message : String(err)
+      }`
+    );
   }
 }

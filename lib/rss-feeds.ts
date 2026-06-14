@@ -10,7 +10,7 @@ export const RSS_FEEDS: Record<string, { name: string; url: string }[]> = {
   politics: [
     { name: "BBC World", url: "http://feeds.bbci.co.uk/news/world/rss.xml" },
     { name: "The Guardian World", url: "https://www.theguardian.com/world/rss" },
-    { name: "AP Top News", url: "https://feeds.apnews.com/apf-topnews" },
+    { name: "The Hill", url: "https://thehill.com/news/feed/" },
     { name: "Al Jazeera", url: "https://www.aljazeera.com/xml/rss/all.xml" },
     { name: "The Guardian US", url: "https://www.theguardian.com/us-news/rss" },
     { name: "The Guardian Australia", url: "https://www.theguardian.com/australia-news/rss" },
@@ -26,14 +26,13 @@ export const RSS_FEEDS: Record<string, { name: string; url: string }[]> = {
   worldcup: [
     // International football
     { name: "BBC Sport Football", url: "http://feeds.bbci.co.uk/sport/football/rss.xml" },
-    { name: "Reuters Sport", url: "https://feeds.reuters.com/reuters/sportsNews" },
+    { name: "MARCA English Football", url: "https://e00-marca.uecdn.es/rss/en/football.xml" },
     { name: "ESPN Soccer", url: "https://www.espn.com/espn/rss/soccer/news" },
     { name: "Sky Sports Football", url: "https://www.skysports.com/rss/12040" },
-    { name: "Goal.com", url: "https://www.goal.com/feeds/en/news" },
+    { name: "FourFourTwo", url: "https://www.fourfourtwo.com/feeds/all" },
     { name: "The Guardian Football", url: "https://www.theguardian.com/football/rss" },
 
     // Mexican football — Pumas and Liga MX
-    { name: "MedioTiempo", url: "https://www.mediotiempo.com/feed" },
     { name: "Record Mexico", url: "https://www.record.com.mx/rss" },
     { name: "Reforma Deportes", url: "https://www.reforma.com/rss/deportes.xml" },
     { name: "ESPN Mexico", url: "https://espndeportes.espn.com/rss/news" },
@@ -51,7 +50,7 @@ export const RSS_FEEDS: Record<string, { name: string; url: string }[]> = {
 
     // NFL
     { name: "ESPN NFL", url: "https://www.espn.com/espn/rss/nfl/news" },
-    { name: "NFL.com", url: "https://www.nfl.com/rss/rsslanding.html" },
+    { name: "ProFootballTalk", url: "https://profootballtalk.nbcsports.com/feed/" },
     { name: "CBS Sports NFL", url: "https://www.cbssports.com/rss/headlines/nfl/" },
   ],
   tech: [
@@ -85,8 +84,8 @@ export const RSS_FEEDS: Record<string, { name: string; url: string }[]> = {
     { name: "SwimSwam", url: "https://swimswam.com/feed/" },
     { name: "Swim England", url: "https://www.swimming.org/swimengland/feed/" },
     { name: "VeloNews", url: "https://velonews.com/feed/" },
-    { name: "Cycling Weekly", url: "https://www.cyclingweekly.com/feed" },
-    { name: "World Athletics", url: "https://worldathletics.org/rss/news" },
+    { name: "Cycling News", url: "https://www.cyclingnews.com/rss/" },
+    { name: "Runner's World", url: "https://www.runnersworld.com/rss/all.xml/" },
   ],
   business: [
     { name: "SmartCompany", url: "https://www.smartcompany.com.au/feed/" },
@@ -100,7 +99,7 @@ export const RSS_FEEDS: Record<string, { name: string; url: string }[]> = {
   latest: [
     { name: "NPR News", url: "https://feeds.npr.org/1001/rss.xml" },
     { name: "BBC Top Stories", url: "http://feeds.bbci.co.uk/news/rss.xml" },
-    { name: "AP Top News", url: "https://feeds.apnews.com/apf-topnews" },
+    { name: "CBS News", url: "https://www.cbsnews.com/latest/rss/main" },
     { name: "ABC Australia", url: "https://www.abc.net.au/news/feed/45910/rss.xml" },
     { name: "The Guardian", url: "https://www.theguardian.com/world/rss" },
     { name: "CNBC", url: "https://www.cnbc.com/id/100003114/device/rss/rss.html" },

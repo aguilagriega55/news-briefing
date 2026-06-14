@@ -75,7 +75,7 @@ PUMAS UNAM (min 2 stories — non-negotiable):
   Result, standings, upcoming match, transfers
 - If no news today, use their most recent result
   or next scheduled fixture
-- Sources: MedioTiempo, Record, Reforma
+- Sources: Record, Reforma, ESPN Mexico
 
 GENERAL FOOTBALL/SOCCER (min 2 stories):
 - Major European leagues: Premier League, La Liga,

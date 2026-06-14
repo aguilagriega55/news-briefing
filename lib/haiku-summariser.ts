@@ -1,6 +1,15 @@
 import { RawArticle } from "./rss-fetcher";
 import { getBias } from "./source-bias";
 
+// Belt-and-braces removal of emoji/pictographs the model may still emit.
+// Intentionally excludes arrows (U+2190–21FF) and Latin accents so Spanish
+// names ("Frías", "José") and em dashes survive untouched.
+const EMOJI_RE =
+  /[\u{1F300}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}\u{FE0F}\u{200D}]/gu;
+function stripEmoji(s: string): string {
+  return (s ?? "").replace(EMOJI_RE, "").replace(/\s{2,}/g, " ").trim();
+}
+
 export type CuratedArticle = {
   title: string;
   summary: string;
@@ -65,6 +74,10 @@ story_type guide: "news" = factual reporting of events; "opinion" = editorial/op
 
 If the SPECIAL INSTRUCTIONS above tell you to add an extra field (e.g. "league", "competition"), include that field on EVERY object using one of the allowed values listed.
 
+STYLE RULES (apply to every title, summary and tag):
+- Use Australian English spelling (e.g. organise, colour, centre, defence, labour, metre).
+- Do not use any emoji.
+
 No markdown, no code fences, no explanation. Only the JSON array.`;
 
   const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -101,6 +114,9 @@ No markdown, no code fences, no explanation. Only the JSON array.`;
     const biasRating = getBias(article.source);
     return {
       ...article,
+      title: stripEmoji(article.title),
+      summary: stripEmoji(article.summary),
+      tag: stripEmoji(article.tag),
       image_url: match?.image ?? null,
       ...(biasRating
         ? {

@@ -36,3 +36,23 @@ export const STORY_COUNT: Record<string, number> = {
 export const DEBATE_SECTION_ID = "debate";
 
 export const sectionIds = SECTIONS.map((s) => s.id);
+
+// ── World Cup tab lifecycle ──────────────────────────────────
+// The FOOTBALL/worldcup tab is only shown during the tournament window,
+// evaluated against the Melbourne (AEST) local date. Removing it from the
+// list slides SPORTS into position 7 automatically — no reordering needed.
+export const WORLDCUP_WINDOW = { start: "2026-06-11", end: "2026-07-19" };
+
+// Current YYYY-MM-DD in Melbourne, independent of device/server timezone.
+export function melbourneDate(now: Date = new Date()): string {
+  return now.toLocaleDateString("en-CA", { timeZone: "Australia/Melbourne" });
+}
+
+export function isWorldCupActive(date: string = melbourneDate()): boolean {
+  return date >= WORLDCUP_WINDOW.start && date <= WORLDCUP_WINDOW.end;
+}
+
+// SECTIONS minus any out-of-window lifecycle tabs (currently just worldcup).
+export function getVisibleSections(date: string = melbourneDate()): Section[] {
+  return SECTIONS.filter((s) => s.id !== "worldcup" || isWorldCupActive(date));
+}

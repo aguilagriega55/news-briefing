@@ -6,7 +6,7 @@ export const maxDuration = 300;
 
 const SECTION_IDS = [
   "latest", "australia", "politics", "finance",
-  "business", "banking", "worldcup", "sports", "running",
+  "business", "banking", "football", "worldcup", "sports", "running",
 ];
 
 function getEdition(): "morning" | "midday" | "evening" | "midnight" {

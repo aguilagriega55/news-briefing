@@ -55,6 +55,27 @@ Guardian Australia, AFR for economic data.
 Tags: Economy | GDP | Sentiment | Melbourne |
 Federal | Victoria | Markets | Housing`,
 
+  football: `Pick exactly 6 football/soccer stories.
+Coverage MUST include every day:
+
+PUMAS UNAM (mandatory, min 2 — men and women):
+- 1 story Pumas UNAM MEN (Liga MX): result, standings,
+  next match, transfers, coach/player news
+- 1 story Pumas UNAM WOMEN (Liga MX Femenil): result,
+  standings, next match, transfers
+- If no news today, use the most recent result or next fixture
+- Sources: Record, Reforma, ESPN Mexico
+
+MEXICAN & GENERAL FOOTBALL (remaining stories):
+- Liga MX and the Mexico national team (El Tri)
+- Major European leagues: Premier League, La Liga,
+  Champions League, Serie A, Bundesliga
+- Major transfers, match results, manager news
+- Australian football (A-League) when newsworthy
+
+Add "competition" field to every article:
+"Pumas Men" | "Pumas Women" | "Liga MX" | "Europe" | "A-League" | "International"`,
+
   worldcup: `Pick exactly 6 stories about the FIFA World Cup 2026.
 Structure every story by a specific national team — name the country
 in the headline. No generic football: this tab is the World Cup only.

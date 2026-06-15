@@ -8,6 +8,7 @@ import LeadStory from "@/components/LeadStory";
 import StoryRow from "@/components/StoryRow";
 import DebatePanel from "@/components/DebatePanel";
 import BankingBrief from "@/components/BankingBrief";
+import WorldCupPanel from "@/components/WorldCupPanel";
 import TickerStrip from "@/components/TickerStrip";
 import Link from "next/link";
 
@@ -195,7 +196,10 @@ export default function Home() {
   const loadedCount = visibleSections.filter((s) => results[s.id].state === "loaded").length;
 
   const uniqueTags = useMemo(() => {
-    if (section.id === "debate" || section.id === "banking" || result.articles.length === 0) return [];
+    // football, sports and worldcup suppress the auto-generated tag pills:
+    // the summariser's per-article tags are too noisy to be useful there.
+    const noPills = ["debate", "banking", "football", "sports", "worldcup"];
+    if (noPills.includes(section.id) || result.articles.length === 0) return [];
     const tags = result.articles.map((a) => a.tag).filter((t): t is string => Boolean(t));
     return [...new Set(tags)];
   }, [result.articles, section.id]);
@@ -400,11 +404,15 @@ export default function Home() {
             </div>
           )}
 
+          {/* World Cup — structured subtabs (static shell, data feeds pending) */}
+          {section.id === "worldcup" && <WorldCupPanel />}
+
           {/* Loading skeleton */}
-          {(result.state === "idle" || result.state === "loading") && <LoadingSkeleton />}
+          {(result.state === "idle" || result.state === "loading") &&
+            section.id !== "worldcup" && <LoadingSkeleton />}
 
           {/* Error */}
-          {result.state === "error" && (
+          {result.state === "error" && section.id !== "worldcup" && (
             <p style={styles.errorMsg}>⚠ {result.error}</p>
           )}
 
@@ -419,7 +427,7 @@ export default function Home() {
           )}
 
           {/* Articles */}
-          {result.state === "loaded" && section.id !== "debate" && section.id !== "banking" && (
+          {result.state === "loaded" && section.id !== "debate" && section.id !== "banking" && section.id !== "worldcup" && (
             <div style={{ margin: "0 -16px" }}>
               {filteredArticles.length === 0 && (
                 <p style={styles.emptyFilter}>No stories match this filter.</p>

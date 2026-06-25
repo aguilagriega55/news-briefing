@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { SECTIONS, getVisibleSections } from "@/lib/sections";
+import { SECTIONS, getVisibleSections, SUB_TABS } from "@/lib/sections";
 import { Article } from "@/lib/supabase";
 import { DebateTopic } from "@/lib/debate-generator";
 import LeadStory from "@/components/LeadStory";
 import StoryRow from "@/components/StoryRow";
+import SubTabNav from "@/components/SubTabNav";
 import DebatePanel from "@/components/DebatePanel";
 import BankingBrief from "@/components/BankingBrief";
 import WorldCupPanel from "@/components/WorldCupPanel";
@@ -88,6 +89,7 @@ export default function Home() {
   const [debateTopics, setDebateTopics] = useState<DebateTopic[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [activeSubTab, setActiveSubTab] = useState<string>("all");
 
   const fetchSection = useCallback(async (sectionId: string, ed: Edition) => {
     if (sectionId === "debate") {
@@ -171,6 +173,7 @@ export default function Home() {
     setResults(initResults(visibleSections));
     setDebateTopics([]);
     setActiveFilter(null);
+    setActiveSubTab("all");
     visibleSections.forEach((s) => fetchSection(s.id, edition));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [edition]);
@@ -180,6 +183,7 @@ export default function Home() {
     setResults(initResults(visibleSections));
     setDebateTopics([]);
     setActiveFilter(null);
+    setActiveSubTab("all");
     await Promise.all(visibleSections.map((s) => fetchSection(s.id, edition)));
     setRefreshing(false);
   }
@@ -187,6 +191,7 @@ export default function Home() {
   function selectTab(id: string) {
     setActiveTab(id);
     setActiveFilter(null);
+    setActiveSubTab("all");
   }
 
   const section = visibleSections.find((s) => s.id === activeTab) ?? visibleSections[0];
@@ -208,6 +213,21 @@ export default function Home() {
     if (!activeFilter) return result.articles;
     return result.articles.filter((a) => a.tag === activeFilter);
   }, [result.articles, activeFilter]);
+
+  // FOOTBALL / SPORTS sub-tabs filter the list by the structured field the
+  // summariser attaches (competition / league). "all" (or any section without
+  // sub-tabs) passes the list through unchanged.
+  const subTabs = SUB_TABS[section.id];
+  const subFilteredArticles = useMemo(() => {
+    if (!subTabs) return filteredArticles;
+    const def = subTabs.find((t) => t.id === activeSubTab) ?? subTabs[0];
+    if (!def.field || !def.values) return filteredArticles;
+    const { field, values } = def;
+    return filteredArticles.filter((a) => {
+      const v = a[field];
+      return typeof v === "string" && values.includes(v);
+    });
+  }, [filteredArticles, subTabs, activeSubTab]);
 
   const formattedTime = result.fetched_at
     ? new Date(result.fetched_at).toLocaleTimeString("en-AU", {
@@ -404,8 +424,10 @@ export default function Home() {
             </div>
           )}
 
-          {/* World Cup — structured subtabs (static shell, data feeds pending) */}
-          {section.id === "worldcup" && <WorldCupPanel />}
+          {/* World Cup — NEWS pane renders live RSS; structured panes pending */}
+          {section.id === "worldcup" && (
+            <WorldCupPanel articles={result.articles} state={result.state} />
+          )}
 
           {/* Loading skeleton */}
           {(result.state === "idle" || result.state === "loading") &&
@@ -429,11 +451,21 @@ export default function Home() {
           {/* Articles */}
           {result.state === "loaded" && section.id !== "debate" && section.id !== "banking" && section.id !== "worldcup" && (
             <div style={{ margin: "0 -16px" }}>
-              {filteredArticles.length === 0 && (
-                <p style={styles.emptyFilter}>No stories match this filter.</p>
+              {subTabs && (
+                <SubTabNav
+                  tabs={subTabs}
+                  active={activeSubTab}
+                  accent={section.color}
+                  onSelect={setActiveSubTab}
+                />
               )}
-              {filteredArticles[0] && <LeadStory article={filteredArticles[0]} />}
-              {filteredArticles.slice(1).map((article, i) => (
+              {subFilteredArticles.length === 0 && (
+                <p style={styles.emptyFilter}>
+                  {subTabs ? "No stories in this section yet." : "No stories match this filter."}
+                </p>
+              )}
+              {subFilteredArticles[0] && <LeadStory article={subFilteredArticles[0]} />}
+              {subFilteredArticles.slice(1).map((article, i) => (
                 <StoryRow key={i} article={article} />
               ))}
             </div>

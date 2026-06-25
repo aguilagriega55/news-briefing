@@ -36,6 +36,7 @@ export interface Article {
   sentiment?: "positive" | "negative" | "neutral";
   tag?: string;
   league?: string;
+  competition?: string;
   bias?: "left" | "center-left" | "center" | "center-right" | "right";
   bias_label?: string;
   bias_reliability?: "high" | "mixed" | "low";

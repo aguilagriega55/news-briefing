@@ -2,19 +2,24 @@
 
 import { useMemo, useState } from "react";
 import { melbourneDate } from "@/lib/sections";
+import { Article } from "@/lib/supabase";
+import SubTabNav, { SubTabItem } from "./SubTabNav";
+import StoryRow from "./StoryRow";
 
 // ── WORLD CUP tab: structured subtabs ────────────────────────
-// Shell only. Each pane renders its layout with an "awaiting feed" state;
-// the panes fill with live data once the structured feeds (football-data.org
+// The NEWS pane renders the live RSS → Haiku World Cup briefing (the same data
+// the other tabs use). The remaining panes are a structured shell: each shows
+// an "awaiting feed" state until the structured sources (football-data.org
 // fixtures/standings + the-odds-api odds + the projection model) are wired in.
 // Knockouts is gated until 28 Jun 2026 (Melbourne local) per the editorial spec.
 
 const ACCENT = "#ca8a04";
 const KNOCKOUTS_VISIBLE_FROM = "2026-06-28";
 
-type SubTab = { id: string; label: string };
+type SectionState = "idle" | "loading" | "loaded" | "error";
 
-const ALL_SUBTABS: SubTab[] = [
+const ALL_SUBTABS: SubTabItem[] = [
+  { id: "news",      label: "NEWS" },
   { id: "fixtures",  label: "FIXTURES & ODDS" },
   { id: "results",   label: "LATEST RESULTS" },
   { id: "standings", label: "GROUP STANDINGS" },
@@ -35,7 +40,13 @@ function PaneHeading({ title, sub }: { title: string; sub: string }) {
   );
 }
 
-export default function WorldCupPanel() {
+export default function WorldCupPanel({
+  articles = [],
+  state = "idle",
+}: {
+  articles?: Article[];
+  state?: SectionState;
+}) {
   const today = useMemo(() => melbourneDate(), []);
   const knockoutsOpen = today >= KNOCKOUTS_VISIBLE_FROM;
 
@@ -44,30 +55,40 @@ export default function WorldCupPanel() {
     [knockoutsOpen]
   );
 
-  const [active, setActive] = useState<string>("fixtures");
+  const [active, setActive] = useState<string>("news");
   const current = subtabs.find((t) => t.id === active) ?? subtabs[0];
 
   return (
     <div style={{ margin: "0 -16px" }}>
       {/* Sub-navigation */}
-      <nav style={styles.subnav}>
-        {subtabs.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setActive(t.id)}
-            style={{
-              ...styles.subnavBtn,
-              color: current.id === t.id ? "#000" : "#aaa",
-              borderBottom:
-                current.id === t.id ? `3px solid ${ACCENT}` : "3px solid transparent",
-            }}
-          >
-            {t.label}
-          </button>
-        ))}
-      </nav>
+      <SubTabNav tabs={subtabs} active={current.id} accent={ACCENT} onSelect={setActive} />
 
       <div style={styles.pane}>
+        {current.id === "news" && (
+          <>
+            <PaneHeading
+              title="World Cup news"
+              sub="Live RSS coverage · Mexico and Australia prioritised"
+            />
+            {(state === "idle" || state === "loading") && (
+              <Pending>Loading the latest World Cup news…</Pending>
+            )}
+            {state === "error" && (
+              <Pending>Couldn&rsquo;t load World Cup news right now — try the refresh button.</Pending>
+            )}
+            {state === "loaded" && articles.length === 0 && (
+              <Pending>No World Cup stories in this edition yet.</Pending>
+            )}
+            {state === "loaded" && articles.length > 0 && (
+              <div style={{ margin: "0 -16px" }}>
+                {articles.map((article, i) => (
+                  <StoryRow key={i} article={article} />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
         {current.id === "fixtures" && (
           <>
             <PaneHeading
@@ -170,28 +191,6 @@ function Table({ cols }: { cols: string[] }) {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-  subnav: {
-    display: "flex",
-    overflowX: "auto",
-    scrollbarWidth: "none",
-    background: "#fafafa",
-    borderBottom: "1px solid #e5e5e5",
-    WebkitOverflowScrolling: "touch",
-  },
-  subnavBtn: {
-    flexShrink: 0,
-    padding: "11px 14px",
-    fontSize: "11px",
-    fontWeight: 700,
-    fontFamily: "var(--font-mono)",
-    letterSpacing: "0.05em",
-    background: "none",
-    border: "none",
-    whiteSpace: "nowrap",
-    minHeight: "42px",
-    cursor: "pointer",
-    WebkitTapHighlightColor: "transparent",
-  },
   pane: {
     padding: "16px",
   },

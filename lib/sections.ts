@@ -35,6 +35,36 @@ export const STORY_COUNT: Record<string, number> = {
   running: 5,
 };
 
+// ── Sub-tab navigation (FOOTBALL / SPORTS) ───────────────────
+// Each non-"all" sub-tab filters the section's already-summarised article list
+// by a structured field the Haiku summariser emits: SPORTS articles carry a
+// `league` ("F1" | "AFL" | "NFL"); FOOTBALL articles carry a `competition`
+// ("Pumas Men" | "Pumas Women" | "Liga MX" | "Europe" | "A-League" |
+// "International"). "all" has no filter and always shows the full list, so the
+// tab still works even if the model omits a field on some article.
+export type SubTab = {
+  id: string;
+  label: string;
+  field?: "league" | "competition";
+  values?: string[];
+};
+
+export const SUB_TABS: Record<string, SubTab[]> = {
+  football: [
+    { id: "all",    label: "ALL" },
+    { id: "pumas",  label: "PUMAS",         field: "competition", values: ["Pumas Men", "Pumas Women"] },
+    { id: "mexico", label: "MEXICO",        field: "competition", values: ["Liga MX"] },
+    { id: "europe", label: "EUROPE",        field: "competition", values: ["Europe"] },
+    { id: "world",  label: "INTERNATIONAL", field: "competition", values: ["International", "A-League"] },
+  ],
+  sports: [
+    { id: "all", label: "ALL" },
+    { id: "f1",  label: "F1",  field: "league", values: ["F1"] },
+    { id: "afl", label: "AFL", field: "league", values: ["AFL"] },
+    { id: "nfl", label: "NFL", field: "league", values: ["NFL"] },
+  ],
+};
+
 export const DEBATE_SECTION_ID = "debate";
 
 export const sectionIds = SECTIONS.map((s) => s.id);

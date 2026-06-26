@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { melbourneDate } from "@/lib/sections";
+import { useEffect, useState } from "react";
 import { Article } from "@/lib/supabase";
 import type { WorldCupData, WcFixture } from "@/lib/worldcup-data";
 import SubTabNav, { SubTabItem } from "./SubTabNav";
@@ -11,12 +10,12 @@ import StoryRow from "./StoryRow";
 // NEWS renders the live RSS → Haiku briefing. FIXTURES / RESULTS / STANDINGS /
 // KNOCKOUTS / FORECAST render structured data from /api/worldcup
 // (football-data.org + the-odds-api). Panes fall back to an "awaiting feed"
-// message when a source/key is unavailable. Knockouts is gated until
-// 28 Jun 2026 (Melbourne local) per the editorial spec.
+// message when a source/key is unavailable. The KNOCKOUTS pane is always shown;
+// it self-describes as "bracket populates once the group stage finishes" until
+// ties are drawn.
 
 const ACCENT = "#ca8a04";
 const PIN_BG = "#fdf6e3";
-const KNOCKOUTS_VISIBLE_FROM = "2026-06-28";
 
 type SectionState = "idle" | "loading" | "loaded" | "error";
 
@@ -98,13 +97,7 @@ export default function WorldCupPanel({
   articles?: Article[];
   state?: SectionState;
 }) {
-  const today = useMemo(() => melbourneDate(), []);
-  const knockoutsOpen = today >= KNOCKOUTS_VISIBLE_FROM;
-
-  const subtabs = useMemo(
-    () => ALL_SUBTABS.filter((t) => t.id !== "knockouts" || knockoutsOpen),
-    [knockoutsOpen]
-  );
+  const subtabs = ALL_SUBTABS;
 
   const [active, setActive] = useState<string>("news");
   const current = subtabs.find((t) => t.id === active) ?? subtabs[0];

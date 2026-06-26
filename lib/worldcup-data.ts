@@ -67,8 +67,10 @@ const ALIASES: Record<string, string> = {
   "ir iran": "iran",
   "usa": "united states",
   "united states of america": "united states",
+  "cape verde islands": "cape verde",
+  "congo dr": "dr congo",
 };
-function norm(name: string): string {
+function norm(name: string | null | undefined): string {
   const base = (name || "")
     .toLowerCase()
     .normalize("NFD")
@@ -200,17 +202,18 @@ export async function getWorldCupData(): Promise<WorldCupData> {
     status: string;
     stage: string;
     group: string | null;
-    homeTeam: { name: string; tla: string };
-    awayTeam: { name: string; tla: string };
+    homeTeam: { name: string | null; tla: string | null };
+    awayTeam: { name: string | null; tla: string | null };
     score: { fullTime: { home: number | null; away: number | null } };
   }>;
 
+  // Knockout matches before the draw have null team names → show "TBD".
   const toFixture = (m: (typeof matches)[number]): WcFixture => ({
     utcDate: m.utcDate,
-    home: m.homeTeam.name,
-    away: m.awayTeam.name,
-    homeTla: m.homeTeam.tla ?? "",
-    awayTla: m.awayTeam.tla ?? "",
+    home: m.homeTeam?.name ?? "TBD",
+    away: m.awayTeam?.name ?? "TBD",
+    homeTla: m.homeTeam?.tla ?? "",
+    awayTla: m.awayTeam?.tla ?? "",
     stage: prettyStage(m.stage),
     group: m.group ? prettyStage(m.group) : null,
     odds: oddsMap.get(`${norm(m.homeTeam.name)}|${norm(m.awayTeam.name)}`) ?? null,
@@ -225,10 +228,13 @@ export async function getWorldCupData(): Promise<WorldCupData> {
     .slice(0, 16)
     .map(toFixture);
 
+  // Show knockout ties that have at least one qualified team; drop fully-undrawn
+  // (TBD v TBD) placeholders so the pane isn't a wall of blanks before the draw.
   const knockouts = upcoming
     .filter((m) => m.stage !== "GROUP_STAGE")
-    .slice(0, 16)
-    .map(toFixture);
+    .map(toFixture)
+    .filter((f) => f.home !== "TBD" || f.away !== "TBD")
+    .slice(0, 16);
 
   const results: WcResult[] = matches
     .filter((m) => m.status === "FINISHED")
@@ -236,8 +242,8 @@ export async function getWorldCupData(): Promise<WorldCupData> {
     .slice(0, 16)
     .map((m) => ({
       utcDate: m.utcDate,
-      home: m.homeTeam.name,
-      away: m.awayTeam.name,
+      home: m.homeTeam.name ?? "TBD",
+      away: m.awayTeam.name ?? "TBD",
       homeScore: m.score.fullTime.home,
       awayScore: m.score.fullTime.away,
       stage: prettyStage(m.stage),

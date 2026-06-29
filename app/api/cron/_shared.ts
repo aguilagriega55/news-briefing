@@ -1,27 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isWorldCupActive } from "@/lib/sections";
 
-export const runtime = "nodejs";
-export const maxDuration = 300;
+// Shared cron worker. Each /api/cron/<edition> route is a thin GET handler that
+// calls run() with its hardcoded edition. (Four unique paths are required
+// because Vercel keys cron jobs by path — four crons on one path collapse to a
+// single job, so each edition gets its own route.)
+
+export type Edition = "morning" | "midday" | "evening" | "midnight";
 
 const SECTION_IDS = [
   "latest", "australia", "politics", "finance",
   "business", "banking", "football", "worldcup", "sports", "running",
 ];
 
-function getEdition(): "morning" | "midday" | "evening" | "midnight" {
-  const h = new Date().getUTCHours();
-  if (h === 19 || (h >= 17 && h < 21)) return "morning";
-  if (h === 1  || (h >= 23 || h < 3))  return "midday";
-  if (h === 7  || (h >= 5  && h < 9))  return "evening";
-  return "midnight";
-}
-
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-export async function GET(request: NextRequest) {
+export async function run(request: NextRequest, edition: Edition) {
+  // Auth: Vercel cron requests carry `Authorization: Bearer ${CRON_SECRET}`.
   const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
 
@@ -29,7 +26,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const edition = getEdition();
   const baseUrl =
     process.env.NEXT_PUBLIC_BASE_URL ||
     `https://${request.headers.get("host")}`;
@@ -41,7 +37,7 @@ export async function GET(request: NextRequest) {
     (id) => id !== "worldcup" || isWorldCupActive()
   );
 
-  // Fetch all news sections sequentially with delay
+  // Fetch all news sections sequentially with delay.
   for (const sectionId of sectionIds) {
     try {
       const res = await fetch(`${baseUrl}/api/news`, {
@@ -58,7 +54,7 @@ export async function GET(request: NextRequest) {
     await sleep(2000);
   }
 
-  // Regenerate debate in morning run only (weekly cache handles deduplication)
+  // Regenerate debate in the morning run only (weekly cache dedupes).
   if (edition === "morning") {
     try {
       const res = await fetch(`${baseUrl}/api/debate`);

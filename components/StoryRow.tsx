@@ -1,3 +1,5 @@
+"use client";
+
 import { Article } from "@/lib/supabase";
 import BiasBar from "./BiasBar";
 
@@ -27,7 +29,7 @@ function SentimentBadge({ sentiment }: { sentiment: "positive" | "negative" | "n
     negative: { bg: "#fef2f2", color: "#dc2626", label: "↓ Negative" },
     neutral:  { bg: "#f5f5f5", color: "#888",    label: "→ Neutral" },
   };
-  const c = config[sentiment];
+  const c = config[sentiment] ?? config.neutral;
   return (
     <span style={{
       display: "inline-flex",

@@ -1,3 +1,5 @@
+"use client";
+
 import { Article } from "@/lib/supabase";
 import BiasBar from "./BiasBar";
 

@@ -4,7 +4,7 @@ interface BiasIndicatorProps {
   position: BiasPosition;
   reliability: ReliabilityTier;
   label: string;
-  /** "compact" = small inline pill for NewsCard; "full" = labeled scale for DebatePanel */
+  /** "compact" = small inline pill for NewsCard; "full" = labeled scale */
   variant?: "compact" | "full";
 }
 
@@ -60,7 +60,7 @@ export default function BiasIndicator({
     );
   }
 
-  // Full variant — labeled scale used in DebatePanel
+  // Full variant — labeled scale
   return (
     <div style={fullStyles.wrap}>
       <div style={fullStyles.scaleRow}>

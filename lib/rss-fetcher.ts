@@ -14,14 +14,38 @@ export type RawArticle = {
   image?: string;
 };
 
+/**
+ * Feeds occasionally serve items with a stale publish date — the WSJ AI-rout
+ * and gold/silver items have shown up stamped 27 January 2025, over a year
+ * before the edition that carried them. Anything older than this many days is
+ * dropped before the summariser ever sees it.
+ */
+const MAX_AGE_DAYS = 7;
+
+/**
+ * An item is stale only when it carries a date we can actually parse and that
+ * date is more than MAX_AGE_DAYS old. Undated and unparseable items are kept:
+ * plenty of feeds omit the field, and dropping those would empty whole
+ * sections rather than fix them.
+ */
+function isStale(pubDate: string, now: number): boolean {
+  if (!pubDate) return false;
+  const published = Date.parse(pubDate);
+  if (Number.isNaN(published)) return false;
+  return now - published > MAX_AGE_DAYS * 86400_000;
+}
+
 export async function fetchRSSFeeds(
   feeds: { name: string; url: string }[],
   maxPerFeed = 8
 ): Promise<RawArticle[]> {
+  // One clock for every feed, so a slow fetch can't shift its own cutoff.
+  const now = Date.now();
+
   const results = await Promise.allSettled(
     feeds.map(async (feed) => {
       const parsed = await parser.parseURL(feed.url);
-      return parsed.items.slice(0, maxPerFeed).map((item) => ({
+      const items = parsed.items.map((item) => ({
         title: item.title ?? "",
         summary: (item.contentSnippet ?? item.content ?? item.summary ?? "")
           .replace(/<[^>]+>/g, "")
@@ -36,6 +60,17 @@ export async function fetchRSSFeeds(
           (item["media:content"] as any)?.$?.url ??
           undefined,
       }));
+
+      // Drop stale items before the per-feed cap, not after, so a feed
+      // leading with old items still contributes a full set of fresh ones.
+      const fresh = items.filter((a) => !isStale(a.pubDate, now));
+      const dropped = items.length - fresh.length;
+      if (dropped > 0) {
+        console.warn(
+          `[rss] ${feed.name}: dropped ${dropped} item(s) older than ${MAX_AGE_DAYS} days`
+        );
+      }
+      return fresh.slice(0, maxPerFeed);
     })
   );
 

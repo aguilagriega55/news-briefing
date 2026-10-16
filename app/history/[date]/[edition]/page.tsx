@@ -54,7 +54,7 @@ export default async function EditionPage({ params }: Props) {
 
   // Order by sections definition
   const orderedSections = sections
-    .filter((s) => sectionMap.has(s.id) && s.id !== "debate")
+    .filter((s) => sectionMap.has(s.id) && s.id !== "riddles")
     .map((s) => ({ section: s, articles: sectionMap.get(s.id)! as Article[] }));
 
   const formattedDate = new Date(date + "T00:00:00").toLocaleDateString("en-AU", {

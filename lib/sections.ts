@@ -8,15 +8,17 @@ export type Section = {
 export const SECTIONS: Section[] = [
   { id: "latest",    label: "TOP NEWS",  color: "#000000", sources: "Reuters · BBC · AP · ABC" },
   { id: "australia", label: "AUSTRALIA", color: "#16a34a", sources: "ABC · The Age · SMH · Guardian AU" },
+  { id: "auspol",    label: "AU POLITICS", color: "#0369a1", sources: "ABC Politics · Guardian AU · SMH · The Age" },
   { id: "politics",  label: "POLITICS",  color: "#1d4ed8", sources: "Reuters · BBC · Guardian · AP" },
   { id: "finance",   label: "FINANCE",   color: "#b45309", sources: "Reuters · CNBC · Bloomberg · FT" },
+  { id: "economy",   label: "ECONOMY",   color: "#475569", sources: "Fed · ECB · BoE · RBA · Guardian" },
   { id: "business",  label: "BUSINESS",  color: "#7c3aed", sources: "AFR · SmartCompany · ABC Business" },
   { id: "banking",   label: "BANKING",   color: "#0f766e", sources: "Reuters · FT · Bloomberg · RBA" },
   { id: "football",  label: "FOOTBALL",  color: "#dc2626", sources: "BBC · ESPN · Record · Reforma" },
   { id: "worldcup",  label: "WORLD CUP", color: "#ca8a04", sources: "FIFA · BBC · ESPN · MARCA" },
   { id: "sports",    label: "SPORTS",    color: "#9333ea", sources: "F1 · AFL · NFL" },
   { id: "running",   label: "RUNNING",   color: "#16a34a", sources: "Triathlete · SwimSwam · Cycling News · Runner's World" },
-  { id: "debate",    label: "DEBATE",    color: "#000000", sources: "AI generated · Weekly rotation" },
+  { id: "riddles",   label: "RIDDLES & STORIES", color: "#7c2d12", sources: "Seasonal riddles · Public-domain literature" },
 ];
 
 // Backward-compat alias (used by page.tsx, history pages)
@@ -25,13 +27,16 @@ export const sections = SECTIONS;
 export const STORY_COUNT: Record<string, number> = {
   latest: 8,
   australia: 5,
+  auspol: 6,
   politics: 5,
   finance: 5,
+  economy: 5,
   business: 5,
   banking: 5,
   football: 6,
   worldcup: 6,
   sports: 5,
+  afl: 6,
   running: 5,
 };
 
@@ -65,7 +70,7 @@ export const SUB_TABS: Record<string, SubTab[]> = {
   ],
 };
 
-export const DEBATE_SECTION_ID = "debate";
+export const RIDDLES_SECTION_ID = "riddles";
 
 export const sectionIds = SECTIONS.map((s) => s.id);
 

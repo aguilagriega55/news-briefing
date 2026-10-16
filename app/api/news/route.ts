@@ -4,8 +4,9 @@ import { fetchRSSFeeds } from "@/lib/rss-fetcher";
 import { summariseWithHaiku } from "@/lib/haiku-summariser";
 import { generateBankingBrief } from "@/lib/banking-brief";
 import { SECTION_INSTRUCTIONS } from "@/lib/section-instructions";
+import { generateRiddlesAndStories } from "@/lib/riddles-generator";
 import { getCachedBriefing, saveBriefing } from "@/lib/supabase";
-import { STORY_COUNT } from "@/lib/sections";
+import { RIDDLES_SECTION_ID, STORY_COUNT } from "@/lib/sections";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -14,12 +15,14 @@ export async function POST(req: NextRequest) {
   try {
     const { sectionId, edition, bypassCache } = await req.json();
 
-    const feeds = RSS_FEEDS[sectionId as keyof typeof RSS_FEEDS];
-    if (!feeds) {
+    // RIDDLES & STORIES is generated rather than fetched, so it has no RSS
+    // feeds — but it is still a real section.
+    const isRiddles = sectionId === RIDDLES_SECTION_ID;
+    if (!isRiddles && !RSS_FEEDS[sectionId as keyof typeof RSS_FEEDS]) {
       return NextResponse.json({ error: "Unknown section" }, { status: 400 });
     }
 
-    // 1. Check cache (unless cron bypass)
+    // 1. Check cache (unless cron bypass) — shared by every section
     if (!bypassCache) {
       const cached = await getCachedBriefing(sectionId, edition);
       if (cached) {
@@ -31,7 +34,29 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 2. Fetch RSS feeds
+    // 1a. Riddles short-circuits the RSS + summarise path: it generates its
+    //     payload, saves it to the same `briefings` table, and returns.
+    if (isRiddles) {
+      console.log(`[news] Generating riddles & stories (${edition})...`);
+      const payload = await generateRiddlesAndStories(edition);
+      console.log(
+        `[news] Generated ${payload.riddles.length} riddles, ${payload.stories.length} excerpts`
+      );
+      const articles = [
+        {
+          title: "",
+          summary: "",
+          source: "Riddles & Stories",
+          riddles_payload: payload,
+        },
+      ];
+      const fetched_at = new Date().toISOString();
+      await saveBriefing(sectionId, edition, articles);
+      return NextResponse.json({ articles, fetched_at, cached: false });
+    }
+
+    // 2. Fetch RSS feeds — presence already validated above
+    const feeds = RSS_FEEDS[sectionId as keyof typeof RSS_FEEDS];
     console.log(`[news] Fetching RSS for ${sectionId}...`);
     const rawArticles = await fetchRSSFeeds(feeds);
     console.log(`[news] Got ${rawArticles.length} raw articles for ${sectionId}`);

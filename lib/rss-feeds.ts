@@ -35,6 +35,21 @@ export const RSS_FEEDS: Record<string, { name: string; url: string }[]> = {
     { name: "Bloomberg", url: "https://feeds.bloomberg.com/markets/news.rss" },
     { name: "WSJ Markets", url: "https://feeds.a.dj.com/rss/RSSMarketsMain.xml" },
   ],
+  // Macro / central-bank section. Deliberately built from feeds already proven
+  // live elsewhere in this file (banking, business, finance) rather than new
+  // economics URLs — the central banks publish decisions and statements
+  // straight to RSS, which is where the GDP/CPI/rate story actually breaks.
+  // The Google News query is the one invented entry: it catches data releases
+  // (ABS, BLS, Eurostat prints) that no single publisher feed reliably carries.
+  economy: [
+    { name: "Guardian Economics", url: "https://www.theguardian.com/business/economics/rss" },
+    { name: "Federal Reserve", url: "https://www.federalreserve.gov/feeds/press_all.xml" },
+    { name: "ECB News", url: "https://www.ecb.europa.eu/rss/press.html" },
+    { name: "Bank of England", url: "https://www.bankofengland.co.uk/rss/news" },
+    { name: "RBA Media Releases", url: "https://www.rba.gov.au/rss/rss-cb-media-releases.xml" },
+    { name: "Financial Times", url: "https://www.ft.com/rss/home" },
+    { name: "Macro Data (Google News)", url: "https://news.google.com/rss/search?q=inflation+OR+GDP+OR+%22interest+rates%22+central+bank&hl=en-AU&gl=AU&ceid=AU:en" },
+  ],
   politics: [
     { name: "BBC World", url: "http://feeds.bbci.co.uk/news/world/rss.xml" },
     { name: "The Guardian World", url: "https://www.theguardian.com/world/rss" },
@@ -50,6 +65,24 @@ export const RSS_FEEDS: Record<string, { name: string; url: string }[]> = {
     { name: "SMH Top Stories", url: "https://www.smh.com.au/rss/feed.xml" },
     { name: "The Age", url: "https://www.theage.com.au/rss/feed.xml" },
     { name: "ABC Melbourne", url: "https://www.abc.net.au/news/feed/1534/rss.xml" },
+  ],
+  // Australian politics. Every URL here was probed live on 3 Oct 2026 — the
+  // originally specified paths were mostly dead (ABC 2942 → 500, SMH and Age
+  // /politics/rss.xml → 404, Herald Sun → unparseable XML) and rss-fetcher
+  // drops failures silently via Promise.allSettled, so the section would have
+  // run on two general-interest feeds without ever reporting a problem.
+  // Same publishers, corrected paths; Nine mastheads use /rss/politics/federal.
+  // Herald Sun has no working feed (already noted for the AFL section above),
+  // so Victorian coverage comes from The Age's Victoria feed instead, and the
+  // Google News query guarantees the mandatory VIC ELECTION story.
+  auspol: [
+    { name: "ABC Politics", url: "https://www.abc.net.au/news/feed/1538/rss.xml" },
+    { name: "The Guardian Australia Politics", url: "https://www.theguardian.com/australia-news/australian-politics/rss" },
+    { name: "SMH Politics", url: "https://www.smh.com.au/rss/politics/federal.xml" },
+    { name: "The Age Politics", url: "https://www.theage.com.au/rss/politics/federal.xml" },
+    { name: "The Age Victoria", url: "https://www.theage.com.au/rss/national/victoria.xml" },
+    { name: "The Conversation AU Politics", url: "https://theconversation.com/au/politics/articles.atom" },
+    { name: "Victorian Election (Google News)", url: "https://news.google.com/rss/search?q=%22Victorian+election%22+OR+%22Victorian+state+election%22&hl=en-AU&gl=AU&ceid=AU:en" },
   ],
   football: FOOTBALL_FEEDS,
   worldcup: WORLDCUP_FEEDS,
@@ -68,6 +101,20 @@ export const RSS_FEEDS: Record<string, { name: string; url: string }[]> = {
     { name: "ESPN NFL", url: "https://www.espn.com/espn/rss/nfl/news" },
     { name: "ProFootballTalk", url: "https://profootballtalk.nbcsports.com/feed/" },
     { name: "CBS Sports NFL", url: "https://www.cbssports.com/rss/headlines/nfl/" },
+  ],
+  // AFL finals. The Google News queries are load-bearing: the odds/tips angle
+  // this section is built around lives on SEN, CODE, Fox Sports and bookmaker
+  // preview pages that publish no usable RSS of their own. Fox Sports, Herald
+  // Sun, SEN and The Roar were all specified but serve 404/403/empty to a feed
+  // reader, so they are omitted rather than left in as silent no-ops.
+  afl: [
+    { name: "AFL.com.au", url: "https://www.afl.com.au/rss" },
+    { name: "Guardian AFL", url: "https://www.theguardian.com/sport/afl/rss" },
+    { name: "ABC Sport", url: "https://www.abc.net.au/news/feed/45924/rss.xml" },
+    { name: "The Age AFL", url: "https://www.theage.com.au/rss/sport/afl.xml" },
+    { name: "Zero Hanger", url: "https://www.zerohanger.com/feed/" },
+    { name: "AFL Tips & Odds (Google News)", url: "https://news.google.com/rss/search?q=AFL+finals+odds+OR+tips+OR+predictions&hl=en-AU&gl=AU&ceid=AU:en" },
+    { name: "AFL Finals (Google News)", url: "https://news.google.com/rss/search?q=AFL+finals+team+news+OR+injury&hl=en-AU&gl=AU&ceid=AU:en" },
   ],
   tech: [
     { name: "The Verge", url: "https://www.theverge.com/rss/index.xml" },

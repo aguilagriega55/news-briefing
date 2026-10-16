@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { RiddlesPayload } from "./riddles-generator";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -8,7 +9,7 @@ export const supabaseReady = !!supabaseUrl && !!supabaseKey;
 // Guarded init: when env vars are missing, surface one readable diagnostic
 // instead of crashing inside createClient or silently writing to a fake
 // endpoint. We still return a placeholder-backed client so modules that import
-// `supabase` directly (history pages, debate route) keep a non-null value; the
+// `supabase` directly (history pages) keep a non-null value; the
 // `supabaseReady` guard blocks real reads/writes until the project is configured.
 if (!supabaseReady) {
   const missing = [
@@ -42,6 +43,12 @@ export interface Article {
   bias_reliability?: "high" | "mixed" | "low";
   story_type?: "news" | "opinion" | "analysis" | "feature";
   markdown?: string;
+  /**
+   * RIDDLES & STORIES rides in a single Article the same way BANKING rides in
+   * `markdown` — one row in the `briefings` table per edition, so the tab
+   * caches and expires exactly like every RSS-backed section.
+   */
+  riddles_payload?: RiddlesPayload;
 }
 
 export type Edition = "morning" | "midday" | "evening" | "midnight";

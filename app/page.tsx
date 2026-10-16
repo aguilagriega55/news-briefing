@@ -1,14 +1,17 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useSyncExternalStore } from "react";
 import { SECTIONS, getVisibleSections, SUB_TABS } from "@/lib/sections";
 import { Article } from "@/lib/supabase";
-import { DebateTopic } from "@/lib/debate-generator";
 import LeadStory from "@/components/LeadStory";
 import StoryRow from "@/components/StoryRow";
 import SubTabNav from "@/components/SubTabNav";
-import DebatePanel from "@/components/DebatePanel";
+import RiddlesPanel from "@/components/RiddlesPanel";
 import BankingBrief from "@/components/BankingBrief";
+import BanksTable from "@/app/components/BanksTable";
+import EconomyTable from "@/app/components/EconomyTable";
+import BankingMarketCapTable from "@/components/banking/BankingMarketCapTable";
+import BigFourBankingDashboard from "@/components/banking/BigFourBankingDashboard";
 import WorldCupPanel from "@/components/WorldCupPanel";
 import TickerStrip from "@/components/TickerStrip";
 import Link from "next/link";
@@ -54,6 +57,82 @@ function initResults(sections: typeof SECTIONS): Record<string, SectionResult> {
   );
 }
 
+/** Melbourne wall clock. Zone abbreviation is derived — AEDT in summer. */
+function melbourneStamp(d: Date): string {
+  const date = d.toLocaleDateString("en-AU", {
+    timeZone: "Australia/Sydney",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+  const time = d.toLocaleTimeString("en-AU", {
+    timeZone: "Australia/Sydney",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  const zone =
+    new Intl.DateTimeFormat("en-AU", {
+      timeZone: "Australia/Sydney",
+      timeZoneName: "short",
+    })
+      .formatToParts(d)
+      .find((part) => part.type === "timeZoneName")?.value ?? "AEST";
+  return `${date}, ${time} ${zone}`;
+}
+
+/** Nothing ever notifies — this only exists to read a browser-only value. */
+const noopSubscribe = () => () => {};
+
+/**
+ * Section heading for the Big Four dashboard. The clock is read through
+ * useSyncExternalStore so the server snapshot is empty and there is no
+ * hydration mismatch; the string is stable within the minute.
+ */
+function BigFourHeading() {
+  const stamp = useSyncExternalStore(
+    noopSubscribe,
+    () => melbourneStamp(new Date()),
+    () => "",
+  );
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "baseline",
+        justifyContent: "space-between",
+        gap: "12px",
+        flexWrap: "wrap",
+        padding: "22px 0 2px",
+      }}
+    >
+      <h2
+        style={{
+          margin: 0,
+          fontFamily: "var(--font-ui)",
+          fontSize: "15px",
+          fontWeight: 700,
+          color: "#000",
+          letterSpacing: "0.02em",
+        }}
+      >
+        Big Four — Full Snapshot
+      </h2>
+      <span
+        style={{
+          fontFamily: "var(--font-mono)",
+          fontSize: "10px",
+          color: "#999",
+          letterSpacing: "0.04em",
+        }}
+      >
+        {stamp ? `Last updated ${stamp}` : ""}
+      </span>
+    </div>
+  );
+}
+
 function LoadingSkeleton() {
   return (
     <div style={{ margin: "0 -16px" }}>
@@ -86,45 +165,11 @@ export default function Home() {
   const [edition, setEdition] = useState<Edition>(() => getCurrentEdition());
   const [activeTab, setActiveTab] = useState<string>("latest");
   const [results, setResults] = useState<Record<string, SectionResult>>(() => initResults(SECTIONS));
-  const [debateTopics, setDebateTopics] = useState<DebateTopic[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [activeSubTab, setActiveSubTab] = useState<string>("all");
 
   const fetchSection = useCallback(async (sectionId: string, ed: Edition) => {
-    if (sectionId === "debate") {
-      setResults((prev) => ({
-        ...prev,
-        debate: { ...prev.debate, state: "loading", error: "" },
-      }));
-      try {
-        const res = await fetch("/api/debate");
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        setDebateTopics(data.topics as DebateTopic[]);
-        setResults((prev) => ({
-          ...prev,
-          debate: {
-            state: "loaded",
-            articles: [],
-            cached: data.cached,
-            fetched_at: new Date().toISOString(),
-            error: "",
-          },
-        }));
-      } catch (err) {
-        setResults((prev) => ({
-          ...prev,
-          debate: {
-            ...prev.debate,
-            state: "error",
-            error: err instanceof Error ? err.message : "Unknown error",
-          },
-        }));
-      }
-      return;
-    }
-
     setResults((prev) => ({
       ...prev,
       [sectionId]: { ...prev[sectionId], state: "loading", error: "" },
@@ -171,7 +216,6 @@ export default function Home() {
 
   useEffect(() => {
     setResults(initResults(visibleSections));
-    setDebateTopics([]);
     setActiveFilter(null);
     setActiveSubTab("all");
     visibleSections.forEach((s) => fetchSection(s.id, edition));
@@ -181,7 +225,6 @@ export default function Home() {
   async function handleRefreshAll() {
     setRefreshing(true);
     setResults(initResults(visibleSections));
-    setDebateTopics([]);
     setActiveFilter(null);
     setActiveSubTab("all");
     await Promise.all(visibleSections.map((s) => fetchSection(s.id, edition)));
@@ -203,7 +246,7 @@ export default function Home() {
   const uniqueTags = useMemo(() => {
     // football, sports and worldcup suppress the auto-generated tag pills:
     // the summariser's per-article tags are too noisy to be useful there.
-    const noPills = ["debate", "banking", "football", "sports", "worldcup"];
+    const noPills = ["riddles", "banking", "football", "sports", "worldcup"];
     if (noPills.includes(section.id) || result.articles.length === 0) return [];
     const tags = result.articles.map((a) => a.tag).filter((t): t is string => Boolean(t));
     return [...new Set(tags)];
@@ -429,6 +472,12 @@ export default function Home() {
             <WorldCupPanel articles={result.articles} state={result.state} />
           )}
 
+          {/* Economy — static indicator table, pinned above the stories.
+              Deliberately not gated on result.state like BanksTable is: the
+              figures are hardcoded, so there is nothing to wait for and the
+              table renders while the RSS fetch is still in flight. */}
+          {section.id === "economy" && <EconomyTable />}
+
           {/* Loading skeleton */}
           {(result.state === "idle" || result.state === "loading") &&
             section.id !== "worldcup" && <LoadingSkeleton />}
@@ -438,18 +487,24 @@ export default function Home() {
             <p style={styles.errorMsg}>⚠ {result.error}</p>
           )}
 
-          {/* Debate */}
-          {result.state === "loaded" && section.id === "debate" && debateTopics.length > 0 && (
-            <DebatePanel topics={debateTopics} />
+          {/* Riddles & Stories — generated payload rides in articles[0] */}
+          {result.state === "loaded" && section.id === "riddles" && result.articles[0]?.riddles_payload && (
+            <RiddlesPanel payload={result.articles[0].riddles_payload} />
           )}
 
           {/* Banking — editorial markdown brief */}
           {result.state === "loaded" && section.id === "banking" && (
-            <BankingBrief markdown={result.articles[0]?.markdown ?? ""} />
+            <>
+              <BankingMarketCapTable />
+              <BigFourHeading />
+              <BigFourBankingDashboard />
+              <BanksTable />
+              <BankingBrief markdown={result.articles[0]?.markdown ?? ""} />
+            </>
           )}
 
           {/* Articles */}
-          {result.state === "loaded" && section.id !== "debate" && section.id !== "banking" && section.id !== "worldcup" && (
+          {result.state === "loaded" && section.id !== "riddles" && section.id !== "banking" && section.id !== "worldcup" && (
             <div style={{ margin: "0 -16px" }}>
               {subTabs && (
                 <SubTabNav

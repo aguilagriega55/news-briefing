@@ -11,6 +11,9 @@ export type Edition = "morning" | "midday" | "evening" | "midnight";
 const SECTION_IDS = [
   "latest", "australia", "politics", "finance",
   "business", "banking", "football", "worldcup", "sports", "running",
+  // Generated rather than RSS-backed, but it runs through /api/news like the
+  // rest so it gets the same per-edition cache row.
+  "riddles",
 ];
 
 function sleep(ms: number) {
@@ -52,16 +55,6 @@ export async function run(request: NextRequest, edition: Edition) {
       console.error(`[cron] ✗ ${sectionId}: ${e}`);
     }
     await sleep(2000);
-  }
-
-  // Regenerate debate in the morning run only (weekly cache dedupes).
-  if (edition === "morning") {
-    try {
-      const res = await fetch(`${baseUrl}/api/debate`);
-      results["debate"] = res.ok ? "ok" : `error ${res.status}`;
-    } catch (e) {
-      results["debate"] = `failed: ${e}`;
-    }
   }
 
   return NextResponse.json({

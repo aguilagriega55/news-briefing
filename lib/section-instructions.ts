@@ -10,6 +10,39 @@ corporate earnings, commodities (oil, gold), currency moves.
 Prefer Bloomberg and Reuters sources.
 Always include at least 1 story about Asian or Australian markets.`,
 
+  economy: `Pick top 5 global macroeconomic stories.
+This section sits above a static table of GDP, inflation and
+policy rates for the USA, China, Germany, Japan, India, UK,
+Spain, Brazil, Canada, Mexico and Australia — the stories should
+explain what is MOVING those numbers, not restate them.
+
+AUSTRALIA / RBA (mandatory 1 story):
+- RBA cash rate decisions, statements, minutes, speeches
+- Australian CPI, GDP, wages or unemployment prints
+- What it means for mortgages and cost of living
+- If no new data, lead with what economists expect next
+
+CENTRAL BANKS (mandatory 1 story):
+- Fed, ECB, Bank of England, Bank of Japan decisions and guidance
+- Name the bank, the rate, the direction and the vote split
+
+DATA RELEASES (mandatory 1 story):
+- Inflation, GDP, jobs, PMI or retail prints from any major economy
+- Give the actual figure, the forecast it beat or missed, and the prior
+
+REMAINING STORIES:
+- China's growth, stimulus and deflation risk
+- Emerging markets, especially Brazil and Mexico
+- Trade, tariffs, commodities, currencies
+- Sovereign debt, fiscal policy, recession signals
+
+ALWAYS: lead with the number. Name the country and the central
+bank. Say whether the figure rose or fell and against what.
+NEVER: vague "economists are concerned" stories with no data.
+
+Tags: RBA | Fed | ECB | BoJ | Inflation | GDP | Rates |
+Jobs | China | Emerging Markets | Trade`,
+
   politics: `Pick top 5 geopolitically significant stories.
 MUST include geographic diversity:
 - At least 1 story from Europe
@@ -54,6 +87,18 @@ Sources: ABC Australia, The Age, SMH,
 Guardian Australia, AFR for economic data.
 Tags: Economy | GDP | Sentiment | Melbourne |
 Federal | Victoria | Markets | Housing`,
+
+  auspol: `Pick 6 Australian politics stories.
+
+MANDATORY: Always cover Victorian state election (28 Nov 2026) when there is news — tag as VIC ELECTION. Ben Carroll (Labor) vs Jess Wilson (Liberal) vs One Nation surge.
+
+FEDERAL: Albanese government, Angus Taylor opposition, AUKUS, cost of living, housing, immigration, Senate crossbench.
+
+VICTORIA PRIORITY: State election polling, Victorian debt, crime, infrastructure, Ben Carroll premiership.
+
+Format: Name the politician and the impact. Include polling numbers when available.
+
+Tags: Federal | VIC ELECTION | Labor | Liberal | Greens | One Nation | AUKUS | Housing`,
 
   football: `Pick exactly 6 football/soccer stories.
 Coverage MUST include every day:
@@ -109,12 +154,12 @@ MUST include:
 - 1-2 stories on broader tech: startups, cybersecurity, semiconductors, policy
 Prefer The Verge, Wired, Ars Technica.`,
 
-  banking: `Pick the top 5 banking and financial services stories.
-Focus on: central banks (RBA, Fed, ECB, BOE), commercial bank earnings and strategy,
-fintech disruption, regulation and compliance, interest rates, credit markets,
-bank M&A, digital banking, crypto regulation.
-Always include at least 1 story about Australian banking (CBA, ANZ, Westpac, NAB or RBA).
-Tag each story with one of: Central Banks | Regulation | Fintech | Earnings | Markets | Strategy`,
+  banking: `Pick 6 Australian banking stories only.
+ONLY about: CBA, ANZ, NAB, Westpac, Macquarie,
+RBA, APRA, Australian mortgages, Australian home loans.
+Reject JPMorgan, Goldman, Fed, BoJ, ECB, Bank of England.
+RBA news always beats international bank news.
+Tags: CBA | ANZ | NAB | Westpac | RBA | Housing`,
 
   running: `Pick top 5 stories for a Melbourne-based runner, swimmer and cyclist.
 This person trains regularly across all three disciplines
@@ -178,4 +223,67 @@ NFL AMERICAN FOOTBALL (min 1 story):
 - Trades, injuries, draft news
 
 Add "league" field to every article: "F1" | "AFL" | "NFL"`,
+
+  afl: `You are writing the AFL section for an Australian
+family in Melbourne. This is finals season — every
+story matters.
+
+STRUCTURE — Pick exactly 6 stories across these categories:
+
+1. MATCH PREVIEW OR RESULT (mandatory — 1–2 stories):
+For upcoming finals games include:
+- Which teams are playing, venue, date and time AEST
+- Betting odds from Sportsbet or TAB (e.g. "Fremantle
+  $1.45 · Hawthorn $2.80")
+- Predictions from AFL.com.au, Fox Sports, The Age,
+  Herald Sun analysts — name the expert and their pick
+- Key matchup (e.g. "Bontempelli vs Daicos in the middle")
+- Injury and team news affecting the game
+For completed finals: full score, best on ground,
+margin, key moments
+
+2. PLAYER NEWS (mandatory — 1–2 stories):
+- Injury updates — who is in/out and why
+- Suspension and tribunal news
+- Award news (Brownlow, Rising Star, All-Australian)
+- Contract and trade news
+- ALWAYS cover Sydney Swans 5-player suspension
+  situation (Heeney, Warner, Blakey, Jordon, Bice)
+  while it remains active
+
+3. TEAM NEWS (1 story):
+- Training reports
+- Coach press conferences
+- Selection changes and surprises
+- MELBOURNE CLUBS priority: Collingwood, Carlton,
+  Melbourne, Western Bulldogs, Essendon, Hawthorn,
+  Richmond, North Melbourne, St Kilda, Footscray
+
+4. FINALS LADDER / STANDINGS (1 story when relevant):
+- Who plays who next week
+- What each result means for the premiership race
+- Path to the Grand Final
+
+BETTING ODDS FORMAT:
+When including odds always format as:
+"[Team A] $X.XX · [Team B] $X.XX (Sportsbet)"
+Source must be named. Use latest available odds.
+
+PREDICTION FORMAT:
+"[Expert name] ([Publication]) tips [Team] by [margin]"
+Include at least 2 expert predictions per preview.
+
+ALWAYS:
+- Name specific players in every headline
+- Include AEST times for all games
+- Prioritise Melbourne-based clubs when equal news
+- Cover AFLW when in season
+
+NEVER:
+- Generic "team wins" headlines
+- Stories without player names
+- Predictions without naming the source
+
+Tags: Finals | Prediction | Odds | Injury |
+Team News | Melbourne Clubs | AFLW | Tribunal`,
 };
